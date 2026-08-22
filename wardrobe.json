@@ -1,0 +1,72 @@
+[
+  {
+    "id": "necklace",
+    "name": "Beaded necklace",
+    "type": "accessory",
+    "note": "Like it a lot",
+    "image": "assets/necklace.jpg"
+  },
+  {
+    "id": "camisole",
+    "name": "Light camisole",
+    "type": "top",
+    "note": "Very comfy · best layered",
+    "image": "assets/camisole.jpg"
+  },
+  {
+    "id": "vneck",
+    "name": "White V-neck T-shirt",
+    "type": "top",
+    "note": "Favorite neckline",
+    "image": "assets/vneck.jpg"
+  },
+  {
+    "id": "stripe",
+    "name": "White + black striped long-sleeve",
+    "type": "top",
+    "note": "Casual",
+    "image": "assets/stripe.jpg"
+  },
+  {
+    "id": "jeans",
+    "name": "Blue jeans",
+    "type": "bottom",
+    "note": "Wear very often",
+    "image": "assets/jeans.jpg"
+  },
+  {
+    "id": "pinstripe",
+    "name": "White pinstripe shirt",
+    "type": "top",
+    "note": "Comfy · wear often",
+    "image": "assets/pinstripe.jpg"
+  },
+  {
+    "id": "blazer",
+    "name": "Powder/light-blue blazer",
+    "type": "layer",
+    "note": "Pretty · less comfy",
+    "image": "assets/blazer.jpg"
+  },
+  {
+    "id": "trousers",
+    "name": "Taupe/brown wide-leg trousers",
+    "type": "bottom",
+    "note": "New · needs styling",
+    "image": "assets/trousers.jpg"
+  },
+  {
+    "id": "sneakers",
+    "name": "White sneakers",
+    "type": "shoes",
+    "note": "Main pair",
+    "image": "assets/sneakers.jpg"
+  },
+  {
+    "id": "loafers",
+    "name": "Black loafers",
+    "type": "shoes",
+    "note": "Rarely worn · styling challenge",
+    "image": "assets/loafers.jpg"
+  }
+]

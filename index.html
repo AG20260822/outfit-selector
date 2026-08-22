@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>index · outfit selector</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <div class="top"><button class="round">☷</button><div class="logo">index</div><button class="round" id="reset">↺</button></div>
+  <div class="eyebrow">YOUR CLOSET</div>
+  <h1>What are we wearing?</h1>
+  <div class="section-label">HOW DO YOU WANT TO DRESS?</div>
+  <div class="chips" id="styles">
+    <button class="chip active" data-style="any">Whatever</button><button class="chip" data-style="casual">Casual</button><button class="chip" data-style="semi">Semi-formal</button><button class="chip" data-style="interesting">Something interesting</button>
+  </div>
+  <div class="section-label">HOW DO YOU WANT TO FEEL?</div>
+  <div class="chips" id="moods">
+    <button class="chip active" data-mood="any">Whatever</button><button class="chip" data-mood="comfy">Comfy</button><button class="chip" data-mood="good">Feel good</button>
+  </div>
+  <div class="section-label">WEATHER</div>
+  <div class="chips" id="weather">
+    <button class="chip active" data-weather="mild">🌤️ Mild</button><button class="chip" data-weather="cold">🧣 Cold</button><button class="chip" data-weather="warm">☀️ Warm</button>
+  </div>
+  <div class="actions">
+    <button class="action" id="surprise">✨ <b>Surprise me</b><small>Let the stylist choose everything</small></button>
+    <button class="action" id="start">👖 <b>Start with an item</b><small>I already know what I want to wear</small></button>
+  </div>
+  <section class="card result" id="result"></section>
+  <section class="card"><div class="section-title">MY CLOSET</div><div class="count"><span id="count">10</span> pieces</div><div class="grid" id="closet"></div></section>
+</div>
+
+<dialog id="picker">
+  <div class="dialog-head"><div><div class="section-title">CHOOSE</div><h2>What do you want to wear?</h2></div><button class="close" onclick="picker.close()">×</button></div>
+  <div class="pickgrid" id="pickgrid"></div>
+</dialog>
+
+<script src="app.js"></script>
+</body></html>
