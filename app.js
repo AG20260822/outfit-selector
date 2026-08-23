@@ -1,7 +1,7 @@
 let W=[];
 let unavailable=JSON.parse(localStorage.getItem("unavailable")||"[]");
 
-fetch("wardrobe.json")
+fetch("https://raw.githubusercontent.com/AG20260822/outfit-selector/main/wardrobe.json")
   .then(r=>r.json())
   .then(data=>{
     W=[...data,...JSON.parse(localStorage.getItem("addedWardrobe")||"[]")];
