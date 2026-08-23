@@ -1,9 +1,10 @@
 let W=[];
+let unavailable=JSON.parse(localStorage.getItem("unavailable")||"[]");
 
 fetch("wardrobe.json")
   .then(r=>r.json())
   .then(data=>{
-    W=data;
+    W=[...data,...JSON.parse(localStorage.getItem("addedWardrobe")||"[]")];
     init();
   })
   .catch(err=>{
@@ -181,7 +182,59 @@ document.querySelectorAll("#weather .chip").forEach(b=>b.onclick=()=>{
 });
 $("#surprise").onclick=()=>show("A surprise for today",generate(),"Based on your style direction, mood and weather.");
 $("#start").onclick=openPicker;
+$("#addItem").onclick=()=>$("#photoInput").click();
 
+$("#photoInput").onchange=async e=>{
+  const file=e.target.files[0];
+  if(!file)return;
+
+  const img=new Image();
+  img.onload=()=>{
+    const max=1000;
+    const scale=Math.min(1,max/Math.max(img.width,img.height));
+    const canvas=document.createElement("canvas");
+    canvas.width=Math.round(img.width*scale);
+    canvas.height=Math.round(img.height*scale);
+    canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+
+    const photo=canvas.toDataURL("image/jpeg",0.8);
+    $("#photoPreview").src=photo;
+    $("#addForm").style.display="block";
+    $("#itemName").focus();
+  };
+  img.src=URL.createObjectURL(file);
+};
+
+$("#saveItem").onclick=()=>{
+  const name=$("#itemName").value.trim();
+  const type=$("#itemType").value;
+  const image=$("#photoPreview").src;
+
+  if(!name){
+    alert("Please give this item a name.");
+    return;
+  }
+
+  const item={
+    id:"photo-"+Date.now(),
+    name,
+    type,
+    image,
+    note:"Added from phone"
+  };
+
+  const added=JSON.parse(localStorage.getItem("addedWardrobe")||"[]");
+  added.push(item);
+  localStorage.setItem("addedWardrobe",JSON.stringify(added));
+
+  W.push(item);
+  renderCloset();
+
+  $("#itemName").value="";
+  $("#photoInput").value="";
+  $("#addForm").style.display="none";
+  $("#photoPreview").src="";
+};
 $("#reset").onclick=()=>{unavailable=[];localStorage.removeItem("unavailable");renderCloset()};
 renderCloset();
 }
