@@ -31,6 +31,11 @@
         margin-top: 0;
     }
 
+    p {
+        line-height: 1.5;
+        color: #666;
+    }
+
     input {
         width: 100%;
         font-size: 16px;
@@ -82,9 +87,13 @@
     }
 
     .prediction {
-        padding: 12px 0;
+        padding: 14px 0;
         border-bottom: 1px solid #ddd;
         font-size: 18px;
+    }
+
+    .prediction:last-child {
+        border-bottom: none;
     }
 </style>
 </head>
@@ -96,8 +105,8 @@
     <h1>Local AI test</h1>
 
     <p>
-        This test runs the image model directly in your browser.
-        Your photo is not uploaded to our server.
+        Choose a clothing photo from your phone.
+        The image analysis runs locally in your browser.
     </p>
 
     <input
@@ -106,7 +115,7 @@
         accept="image/*"
     >
 
-    <img id="preview">
+    <img id="preview" alt="Selected clothing photo">
 
     <button id="analyzeButton" disabled>
         Analyze image
@@ -125,8 +134,10 @@
 
 <script type="module">
 
-import { pipeline } from
-    "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0";
+import {
+    pipeline,
+    RawImage
+} from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0";
 
 const photoInput = document.getElementById("photoInput");
 const preview = document.getElementById("preview");
@@ -137,6 +148,11 @@ const predictions = document.getElementById("predictions");
 
 let classifier = null;
 let imageFile = null;
+
+
+// --------------------------------------------------
+// LOAD LOCAL AI
+// --------------------------------------------------
 
 async function loadAI() {
 
@@ -150,10 +166,13 @@ async function loadAI() {
             "Xenova/mobilevit-small"
         );
 
-        status.textContent =
-            "✓ Local AI loaded. Choose a clothing photo.";
+        status.innerHTML =
+            "✓ Local AI loaded.<br>" +
+            "Choose a clothing photo.";
 
-        analyzeButton.disabled = !imageFile;
+        if (imageFile) {
+            analyzeButton.disabled = false;
+        }
 
     } catch (error) {
 
@@ -162,9 +181,14 @@ async function loadAI() {
         status.innerHTML =
             "<strong>Could not load local AI.</strong><br><br>" +
             "Technical error:<br>" +
-            error.message;
+            escapeHTML(error.message);
     }
 }
+
+
+// --------------------------------------------------
+// PHOTO SELECTION
+// --------------------------------------------------
 
 photoInput.addEventListener("change", function(event) {
 
@@ -183,11 +207,20 @@ photoInput.addEventListener("change", function(event) {
 
     result.style.display = "none";
 
+    status.innerHTML =
+        "Photo selected.<br>" +
+        "Ready to analyze.";
+
     if (classifier) {
         analyzeButton.disabled = false;
     }
 
 });
+
+
+// --------------------------------------------------
+// ANALYZE PHOTO
+// --------------------------------------------------
 
 analyzeButton.addEventListener("click", async function() {
 
@@ -197,24 +230,48 @@ analyzeButton.addEventListener("click", async function() {
 
     analyzeButton.disabled = true;
 
+    result.style.display = "none";
+
     status.textContent =
         "Analyzing image locally…";
 
-    result.style.display = "none";
-
     try {
 
-        const output = await classifier(preview, {
-            topk: 5
-        });
+        /*
+         * IMPORTANT:
+         *
+         * Do not pass the HTML <img> element directly
+         * into Transformers.js.
+         *
+         * Instead, convert the selected phone photo
+         * into a Blob and then into RawImage.
+         */
 
-        console.log(output);
+        const rawImage =
+            await RawImage.fromBlob(imageFile);
+
+        console.log(
+            "Image loaded:",
+            rawImage.width,
+            "x",
+            rawImage.height
+        );
+
+        const output = await classifier(
+            rawImage,
+            {
+                topk: 5
+            }
+        );
+
+        console.log("AI output:", output);
 
         predictions.innerHTML = "";
 
         output.forEach(item => {
 
-            const div = document.createElement("div");
+            const div =
+                document.createElement("div");
 
             div.className = "prediction";
 
@@ -223,7 +280,7 @@ analyzeButton.addEventListener("click", async function() {
 
             div.innerHTML =
                 "<strong>" +
-                item.label +
+                escapeHTML(item.label) +
                 "</strong>" +
                 " — " +
                 percentage +
@@ -237,7 +294,7 @@ analyzeButton.addEventListener("click", async function() {
 
         status.innerHTML =
             "✓ Analysis complete.<br>" +
-            "The image was processed locally in your browser.";
+            "The photo was processed locally in your browser.";
 
     } catch (error) {
 
@@ -245,12 +302,32 @@ analyzeButton.addEventListener("click", async function() {
 
         status.innerHTML =
             "<strong>Analysis failed.</strong><br><br>" +
-            error.message;
+            escapeHTML(error.message);
     }
 
     analyzeButton.disabled = false;
 
 });
+
+
+// --------------------------------------------------
+// BASIC HTML ESCAPING
+// --------------------------------------------------
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+// --------------------------------------------------
+// START
+// --------------------------------------------------
 
 loadAI();
 
