@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Local AI Clothing Test</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px 18px 60px;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      background: #f7f6f3;
+      color: #171717;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-family: Georgia, serif;
+      font-size: 48px;
+      line-height: 0.98;
+      margin: 10px 0 14px;
+    }
+
+    .intro {
+      font-size: 18px;
+      line-height: 1.5;
+      color: #666;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #ddd9d2;
+      border-radius: 24px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 16px;
+      padding: 16px 18px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .primary {
+      background: #111;
+      color: white;
+    }
+
+    .secondary {
+      background: #e9e8e6;
+      color: #087ff5;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    #preview {
+      display: none;
+      width: 100%;
+      max-height: 500px;
+      object-fit: contain;
+      border-radius: 18px;
+      margin-top: 18px;
+      background: #eee;
+    }
+
+    .status {
+      background: #f0f0f0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-top: 16px;
+      color: #555;
+      line-height: 1.45;
+    }
+
+    .status.ready {
+      background: #e9f7ec;
+      color: #176b2c;
+    }
+
+    .status.error {
+      background: #fdeaea;
+      color: #a11;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: #777;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .result {
+      font-size: 21px;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+
+    .result small {
+      display: block;
+      font-size: 14px;
+      font-weight: 400;
+      color: #777;
+      margin-top: 4px;
+    }
+
+    .result-row {
+      border-bottom: 1px solid #eee;
+      padding: 13px 0;
+    }
+
+    .result-row:last-child {
+      border-bottom: 0;
+    }
+
+    .label {
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 4px;
+    }
+
+    .value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .bar {
+      height: 7px;
+      background: #e5e5e5;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 7px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: #111;
+      width: 0%;
+      border-radius: 10px;
+    }
+
+    .note {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #777;
+      margin-top: 18px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #bbb;
+      border-top-color: #111;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: -3px;
+      margin-right: 7px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #results {
+      display: none;
+    }
+
+    .privacy {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+      margin-top: 18px;
+    }
+
+    .privacy strong {
+      color: #222;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>Local AI<br>clothing test</h1>
+
+  <div class="intro">
+    Take a photo or choose one from your phone.
+    The AI will try to understand what clothing item it is
+    and how it could be used by the outfit selector.
+  </div>
+
+  <div class="card">
+
+    <div class="section-title">1. Choose an image</div>
+
+    <!-- Existing photo library / files -->
+    <input
+      id="photoInput"
+      type="file"
+      accept="image/*"
+    >
+
+    <!-- Camera -->
+    <input
+      id="cameraInput"
+      type="file"
+      accept="image/*"
+      capture="environment"
+    >
+
+    <button
+      id="chooseButton"
+      class="primary"
+      type="button"
+    >
+      📱 Choose a photo
+    </button>
+
+    <button
+      id="cameraButton"
+      class="secondary"
+      type="button"
+    >
+      📷 Take a new photo
+    </button>
+
+    <img id="preview" alt="Selected clothing">
+
+    <div id="status" class="status">
+      Loading the local AI system…
+    </div>
+
+  </div>
+
+
+  <div id="results" class="card">
+
+    <div class="section-title">AI result</div>
+
+    <div id="mainResult" class="result">
+      —
+    </div>
+
+    <div class="result-row">
+      <div class="label">CATEGORY</div>
+      <div id="categoryValue" class="value">—</div>
+      <div class="bar">
+        <div id="categoryBar" class="bar-fill"></div>
+      </div>
+    </div>
+
+    <div class="result-row">
+      <div class="label">WEATHER</div>
+      <div id="weatherValue" class="value">—</div>
+      <div class="bar">
+        <div id="weatherBar" class="bar-fill"></div>
+      </div>
+    </div>
+
+    <div class="result-row">
+      <div class="label">DRESSINESS</div>
+      <div id="dressValue" class="value">—</div>
+      <div class="bar">
+        <div id="dressBar" class="bar-fill"></div>
+      </div>
+    </div>
+
+    <div class="result-row">
+      <div class="label">STYLE</div>
+      <div id="styleValue" class="value">—</div>
+      <div class="bar">
+        <div id="styleBar" class="bar-fill"></div>
+      </div>
+    </div>
+
+    <div class="note">
+      These are AI estimates. We're testing whether this approach
+      is good enough to become the automatic clothing-library system
+      in your app.
+    </div>
+
+  </div>
+
+
+  <div class="card">
+
+    <div class="section-title">Privacy</div>
+
+    <div class="privacy">
+      <strong>Your clothing photo is processed locally in this browser.</strong>
+      There is no login and no AI API key in this test.
+      The AI model itself is downloaded from the internet the first
+      time you use it, then your browser can cache it.
+    </div>
+
+  </div>
+
+</div>
+
+
+<script type="module">
+
+  /*
+   * ============================================================
+   * LOCAL AI CLOTHING TEST
+   *
+   * Uses Hugging Face Transformers.js.
+   *
+   * The model runs inside the browser.
+   * No image is sent to an AI server for analysis.
+   * ============================================================
+   */
+
+  import {
+    pipeline
+  } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0";
+
+
+  // ------------------------------------------------------------
+  // Elements
+  // ------------------------------------------------------------
+
+  const photoInput = document.getElementById("photoInput");
+  const cameraInput = document.getElementById("cameraInput");
+
+  const chooseButton = document.getElementById("chooseButton");
+  const cameraButton = document.getElementById("cameraButton");
+
+  const preview = document.getElementById("preview");
+  const status = document.getElementById("status");
+
+  const results = document.getElementById("results");
+
+  const mainResult = document.getElementById("mainResult");
+
+  const categoryValue = document.getElementById("categoryValue");
+  const weatherValue = document.getElementById("weatherValue");
+  const dressValue = document.getElementById("dressValue");
+  const styleValue = document.getElementById("styleValue");
+
+  const categoryBar = document.getElementById("categoryBar");
+  const weatherBar = document.getElementById("weatherBar");
+  const dressBar = document.getElementById("dressBar");
+  const styleBar = document.getElementById("styleBar");
+
+
+  // ------------------------------------------------------------
+  // State
+  // ------------------------------------------------------------
+
+  let classifier = null;
+  let selectedImage = null;
+
+
+  // ------------------------------------------------------------
+  // Candidate labels
+  //
+  // These are deliberately written in ordinary language.
+  // CLIP compares the image with these descriptions.
+  // ------------------------------------------------------------
+
+  const ITEM_LABELS = [
+    "jeans",
+    "trousers",
+    "skirt",
+    "shorts",
+    "dress",
+    "jumpsuit",
+    "blouse",
+    "shirt",
+    "t-shirt",
+    "tank top",
+    "camisole",
+    "sweater",
+    "cardigan",
+    "hoodie",
+    "jacket",
+    "blazer",
+    "coat",
+    "vest",
+    "sneakers",
+    "boots",
+    "heels",
+    "sandals",
+    "loafers",
+    "flats",
+    "handbag",
+    "scarf",
+    "hat",
+    "necklace",
+    "belt",
+    "other clothing item"
+  ];
+
+
+  const CATEGORY_LABELS = [
+    "a top",
+    "a bottom",
+    "a dress",
+    "a one-piece outfit",
+    "outerwear",
+    "shoes",
+    "an accessory"
+  ];
+
+
+  const WEATHER_LABELS = [
+    "best for hot warm weather",
+    "best for mild weather",
+    "best for cool weather",
+    "best for cold weather"
+  ];
+
+
+  const DRESS_LABELS = [
+    "very casual",
+    "casual",
+    "smart casual",
+    "semi-formal",
+    "formal"
+  ];
+
+
+  const STYLE_LABELS = [
+    "minimal",
+    "classic",
+    "elegant",
+    "romantic",
+    "sporty",
+    "bohemian",
+    "trendy",
+    "business",
+    "relaxed"
+  ];
+
+
+  // ------------------------------------------------------------
+  // UI helpers
+  // ------------------------------------------------------------
+
+  function setStatus(message, type = "") {
+
+    status.className = "status";
+
+    if (type) {
+      status.classList.add(type);
+    }
+
+    status.innerHTML = message;
+  }
+
+
+  function percent(score) {
+
+    const value = Math.round(score * 100);
+
+    return Math.max(0, Math.min(100, value));
+  }
+
+
+  function prettyLabel(label) {
+
+    return label
+      .replace(/^a /, "")
+      .replace(/^an /, "")
+      .replace(/^best for /, "")
+      .replace(/^very /, "very ")
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+
+  function showPrediction(element, bar, prediction) {
+
+    if (!prediction) {
+
+      element.textContent = "No result";
+      bar.style.width = "0%";
+
+      return;
+    }
+
+    const p = percent(prediction.score);
+
+    element.textContent = prettyLabel(prediction.label);
+
+    bar.style.width = p + "%";
+  }
+
+
+  // ------------------------------------------------------------
+  // Load AI
+  // ------------------------------------------------------------
+
+  async function loadAI() {
+
+    try {
+
+      setStatus(
+        '<span class="spinner"></span>' +
+        'Downloading the local AI model. The first time can take a while…'
+      );
+
+      /*
+       * CLIP is a zero-shot image classifier.
+       *
+       * It can compare an image with labels that we provide,
+       * rather than requiring a fixed clothing-category model.
+       */
+
+      classifier = await pipeline(
+        "zero-shot-image-classification",
+        "Xenova/clip-vit-base-patch32",
+        {
+          dtype: "q8"
+        }
+      );
+
+      setStatus(
+        "✓ Local AI is ready. Choose a clothing photo.",
+        "ready"
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      setStatus(
+        "Could not load the local AI model.<br><br>" +
+        "<strong>Error:</strong> " +
+        (error.message || error),
+        "error"
+      );
+
+    }
+  }
+
+
+  // ------------------------------------------------------------
+  // File handling
+  // ------------------------------------------------------------
+
+  function handleFile(file) {
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+
+      setStatus(
+        "Please choose an image.",
+        "error"
+      );
+
+      return;
+    }
+
+    selectedImage = file;
+
+    const url = URL.createObjectURL(file);
+
+    preview.src = url;
+    preview.style.display = "block";
+
+    results.style.display = "none";
+
+    setStatus(
+      "Photo selected. Starting local AI analysis…"
+    );
+
+    analyzeImage(file);
+  }
+
+
+  chooseButton.addEventListener("click", () => {
+
+    photoInput.click();
+
+  });
+
+
+  cameraButton.addEventListener("click", () => {
+
+    cameraInput.click();
+
+  });
+
+
+  photoInput.addEventListener("change", event => {
+
+    const file = event.target.files[0];
+
+    handleFile(file);
+
+  });
+
+
+  cameraInput.addEventListener("change", event => {
+
+    const file = event.target.files[0];
+
+    handleFile(file);
+
+  });
+
+
+  // ------------------------------------------------------------
+  // Run a classification
+  // ------------------------------------------------------------
+
+  async function classify(image, labels) {
+
+    const output = await classifier(
+      image,
+      labels,
+      {
+        top_k: labels.length
+      }
+    );
+
+    /*
+     * Transformers.js returns the highest-scoring labels first.
+     */
+
+    return output;
+
+  }
+
+
+  // ------------------------------------------------------------
+  // Analyze clothing
+  // ------------------------------------------------------------
+
+  async function analyzeImage(file) {
+
+    if (!classifier) {
+
+      setStatus(
+        "The AI model is not ready yet. Please wait a moment.",
+        "error"
+      );
+
+      return;
+    }
+
+    try {
+
+      setStatus(
+        '<span class="spinner"></span>' +
+        "Looking at the clothing item…"
+      );
+
+      /*
+       * Object URL keeps the image local to this browser.
+       */
+
+      const imageURL = URL.createObjectURL(file);
+
+
+      // --------------------------------------------------------
+      // 1. What item is this?
+      // --------------------------------------------------------
+
+      const itemPredictions = await classify(
+        imageURL,
+        ITEM_LABELS
+      );
+
+      const bestItem = itemPredictions[0];
+
+
+      setStatus(
+        '<span class="spinner"></span>' +
+        "Checking clothing category…"
+      );
+
+
+      // --------------------------------------------------------
+      // 2. What category?
+      // --------------------------------------------------------
+
+      const categoryPredictions = await classify(
+        imageURL,
+        CATEGORY_LABELS
+      );
+
+      const bestCategory = categoryPredictions[0];
+
+
+      setStatus(
+        '<span class="spinner"></span>' +
+        "Checking weather suitability…"
+      );
+
+
+      // --------------------------------------------------------
+      // 3. Weather
+      // --------------------------------------------------------
+
+      const weatherPredictions = await classify(
+        imageURL,
+        WEATHER_LABELS
+      );
+
+      const bestWeather = weatherPredictions[0];
+
+
+      setStatus(
+        '<span class="spinner"></span>' +
+        "Checking dressiness…"
+      );
+
+
+      // --------------------------------------------------------
+      // 4. Dressiness
+      // --------------------------------------------------------
+
+      const dressPredictions = await classify(
+        imageURL,
+        DRESS_LABELS
+      );
+
+      const bestDress = dressPredictions[0];
+
+
+      setStatus(
+        '<span class="spinner"></span>' +
+        "Checking style…"
+      );
+
+
+      // --------------------------------------------------------
+      // 5. Style
+      // --------------------------------------------------------
+
+      const stylePredictions = await classify(
+        imageURL,
+        STYLE_LABELS
+      );
+
+      const bestStyle = stylePredictions[0];
+
+
+      // --------------------------------------------------------
+      // Display results
+      // --------------------------------------------------------
+
+      mainResult.innerHTML =
+        prettyLabel(bestItem.label) +
+        "<small>" +
+        percent(bestItem.score) +
+        "% confidence for the item identification</small>";
+
+
+      showPrediction(
+        categoryValue,
+        categoryBar,
+        bestCategory
+      );
+
+
+      showPrediction(
+        weatherValue,
+        weatherBar,
+        bestWeather
+      );
+
+
+      showPrediction(
+        dressValue,
+        dressBar,
+        bestDress
+      );
+
+
+      showPrediction(
+        styleValue,
+        styleBar,
+        bestStyle
+      );
+
+
+      results.style.display = "block";
+
+
+      setStatus(
+        "✓ Analysis complete. Everything above was processed locally.",
+        "ready"
+      );
+
+
+      URL.revokeObjectURL(imageURL);
+
+    } catch (error) {
+
+      console.error(error);
+
+      setStatus(
+        "The AI could not analyse this photo.<br><br>" +
+        "<strong>Error:</strong> " +
+        (error.message || error),
+        "error"
+      );
+
+    }
+  }
+
+
+  // ------------------------------------------------------------
+  // Start loading the model immediately
+  // ------------------------------------------------------------
+
+  loadAI();
+
+</script>
+
+</body>
+</html>
