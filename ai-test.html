@@ -1,1044 +1,625 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Clothing AI Test</title>
 
-  <meta
-    name="viewport"
-    content="width=device-width,
-             initial-scale=1,
-             maximum-scale=1,
-             user-scalable=no"
-  >
+<style>
+* {
+    box-sizing: border-box;
+}
 
-  <title>AI Test - Mobile Chrome</title>
+body {
+    margin: 0;
+    padding: 24px 16px 60px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f5f5f5;
+    color: #111;
+}
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+.container {
+    max-width: 720px;
+    margin: auto;
+}
 
-    body {
-      margin: 0;
-      padding: 22px 16px 50px;
-      background: #f7f6f3;
-      color: #151515;
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Arial,
-        sans-serif;
-    }
+h1 {
+    font-size: 32px;
+    margin: 0 0 8px;
+}
 
-    .container {
-      max-width: 680px;
-      margin: auto;
-    }
+.subtitle {
+    color: #666;
+    font-size: 17px;
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
 
-    h1 {
-      margin: 0 0 8px;
-      font-family: Georgia, serif;
-      font-size: 36px;
-      font-weight: 400;
-    }
+.card {
+    background: white;
+    border-radius: 24px;
+    padding: 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
 
-    .subtitle {
-      color: #666;
-      font-size: 17px;
-      line-height: 1.45;
-      margin-bottom: 24px;
-    }
+.label {
+    font-size: 13px;
+    letter-spacing: 2px;
+    font-weight: 700;
+    color: #777;
+    margin-bottom: 14px;
+}
 
-    .card {
-      background: white;
-      border-radius: 24px;
-      padding: 20px;
-      margin-bottom: 18px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.05);
-    }
+input[type="file"] {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #ddd;
+    border-radius: 14px;
+    background: #fafafa;
+    font-size: 16px;
+}
 
-    .label {
-      display: block;
-      margin-bottom: 10px;
-      color: #777;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 2px;
-    }
+.preview {
+    width: 100%;
+    max-height: 520px;
+    object-fit: contain;
+    display: none;
+    margin-top: 18px;
+    border-radius: 18px;
+    background: #eee;
+}
 
-    input[type="file"] {
-      width: 100%;
-      padding: 14px;
-      border: 1px solid #ddd;
-      border-radius: 14px;
-      background: #fafafa;
-      font-size: 16px;
-    }
+button {
+    width: 100%;
+    border: 0;
+    border-radius: 18px;
+    padding: 19px;
+    margin-top: 18px;
+    background: #111;
+    color: white;
+    font-size: 19px;
+    font-weight: 700;
+}
 
-    #preview {
-      display: none;
-      width: 100%;
-      max-height: 500px;
-      object-fit: contain;
-      margin-top: 18px;
-      border-radius: 18px;
-      background: #eee;
-    }
+button:disabled {
+    background: #aaa;
+}
 
-    button {
-      width: 100%;
-      margin-top: 18px;
-      padding: 17px;
-      border: 0;
-      border-radius: 17px;
-      background: #151515;
-      color: white;
-      font-size: 18px;
-      font-weight: 700;
-    }
+.status {
+    display: none;
+    padding: 18px;
+    border-radius: 18px;
+    margin-top: 18px;
+    line-height: 1.5;
+}
 
-    button:disabled {
-      background: #aaa;
-    }
+.status.info {
+    display: block;
+    background: #eef4ff;
+    color: #234;
+}
 
-    .status {
-      margin-top: 18px;
-      padding: 15px;
-      border-radius: 15px;
-      background: #f0f0ee;
-      line-height: 1.5;
-    }
+.status.success {
+    display: block;
+    background: #e7f7eb;
+    color: #176b32;
+}
 
-    .success {
-      background: #e9f7ed;
-      color: #216b36;
-    }
+.status.error {
+    display: block;
+    background: #ffe8e8;
+    color: #8b2020;
+}
 
-    .error {
-      background: #fde9e9;
-      color: #8b2222;
-      overflow-wrap: anywhere;
-    }
+.result {
+    display: none;
+}
 
-    .warning {
-      background: #fff5d9;
-      color: #735500;
-    }
+.result-item {
+    padding: 18px 0;
+    border-bottom: 1px solid #ddd;
+}
 
-    #resultsCard {
-      display: none;
-    }
+.result-item:last-child {
+    border-bottom: 0;
+}
 
-    .result {
-      padding: 15px 0;
-      border-bottom: 1px solid #e5e5e5;
-    }
+.result-label {
+    font-size: 23px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
 
-    .result:last-child {
-      border-bottom: 0;
-    }
+.result-description {
+    color: #666;
+    font-size: 15px;
+    margin-bottom: 10px;
+}
 
-    .result-name {
-      font-size: 18px;
-      font-weight: 700;
-      line-height: 1.35;
-    }
+.bar {
+    height: 12px;
+    background: #e5e5e5;
+    border-radius: 20px;
+    overflow: hidden;
+}
 
-    .result-score {
-      margin-top: 4px;
-      color: #666;
-    }
+.bar-fill {
+    height: 100%;
+    background: #111;
+    border-radius: 20px;
+}
 
-    .bar {
-      height: 8px;
-      margin-top: 9px;
-      border-radius: 10px;
-      background: #e5e5e5;
-      overflow: hidden;
-    }
+.big-result {
+    font-size: 30px;
+    font-weight: 800;
+    margin: 6px 0 10px;
+}
 
-    .fill {
-      height: 100%;
-      background: #151515;
-      border-radius: 10px;
-    }
+.note {
+    color: #666;
+    line-height: 1.6;
+    font-size: 15px;
+}
 
-    .small {
-      color: #777;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .note {
-      margin-top: 15px;
-      padding-top: 15px;
-      border-top: 1px solid #e5e5e5;
-    }
-
-    .debug {
-      margin-top: 15px;
-      padding: 12px;
-      background: #f4f4f4;
-      border-radius: 12px;
-      font-family: monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-  </style>
+.small {
+    color: #888;
+    font-size: 13px;
+    margin-top: 12px;
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
 
-  <h1>Small AI Test</h1>
+    <div class="card">
+        <div class="label">CLOTHING AI TEST</div>
 
-  <div class="subtitle">
-    A deliberately tiny browser AI test for mobile Chrome.
-    Your photo stays on your phone.
-  </div>
+        <h1>SegFormer B0 Clothes</h1>
 
-  <!-- PHOTO -->
+        <div class="subtitle">
+            This test uses a clothing-specific AI model
+            running locally in Chrome on your phone.
+        </div>
 
-  <div class="card">
+        <input
+            id="photoInput"
+            type="file"
+            accept="image/*"
+        >
 
-    <span class="label">
-      1 · CHOOSE A PHOTO
-    </span>
+        <img
+            id="preview"
+            class="preview"
+            alt="Selected clothing photo"
+        >
 
-    <input
-      id="photoInput"
-      type="file"
-      accept="image/*"
-    >
+        <button id="analyzeButton" disabled>
+            Analyze clothing
+        </button>
 
-    <img
-      id="preview"
-      alt="Selected photo"
-    >
-
-    <button
-      id="runButton"
-      disabled
-    >
-      Run small AI
-    </button>
-
-    <div
-      id="status"
-      class="status"
-    >
-      Choose a photo to begin.
+        <div id="status" class="status"></div>
     </div>
 
-  </div>
 
+    <div id="resultCard" class="card result">
 
-  <!-- RESULTS -->
+        <div class="label">AI RESULT</div>
 
-  <div
-    id="resultsCard"
-    class="card"
-  >
+        <div id="mainResult"></div>
 
-    <span class="label">
-      2 · AI RESULT
-    </span>
+        <div id="resultsList"></div>
 
-    <div id="results"></div>
-
-    <div
-      id="debug"
-      class="debug"
-      style="display:none;"
-    ></div>
-
-    <div class="note small">
-      This is a generic image-classification model.
-      It is NOT expected to identify clothing perfectly.
-      The purpose of this test is to prove that your
-      phone can run the AI and return usable predictions.
-    </div>
-
-  </div>
-
-
-  <!-- EXPLANATION -->
-
-  <div class="card">
-
-    <span class="label">
-      WHY ARE WE TESTING THIS?
-    </span>
-
-    <div class="small">
-
-      First we need to establish that Chrome on your
-      phone can reliably run a small computer-vision
-      model locally.
-
-      Once that works, we can move on to a
-      clothing-specific model.
+        <div class="small">
+            SegFormer B0 clothing segmentation running locally
+            in your browser.
+        </div>
 
     </div>
 
-  </div>
+
+    <div class="card">
+
+        <div class="label">WHAT ARE WE TESTING?</div>
+
+        <div class="note">
+            We already proved that your phone can run a small
+            computer-vision model locally.
+
+            <br><br>
+
+            This test is different: the model is specifically
+            trained for clothing segmentation.
+
+            <br><br>
+
+            For your jeans photo, we want to see whether the AI
+            recognises the trousers as <strong>Pants</strong>
+            rather than unrelated ImageNet objects.
+        </div>
+
+    </div>
 
 </div>
 
 
 <script type="module">
 
-import {
-  pipeline
-} from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
+import { pipeline } from
+    "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
 
-/*
-============================================================
-MODEL
-============================================================
-*/
-
-const MODEL =
-  "onnx-community/mobilenetv4_conv_small.e2400_r224_in1k";
-
-
-/*
-============================================================
-ELEMENTS
-============================================================
-*/
-
-const photoInput =
-  document.getElementById("photoInput");
-
-const preview =
-  document.getElementById("preview");
-
-const runButton =
-  document.getElementById("runButton");
-
-const statusBox =
-  document.getElementById("status");
-
-const resultsCard =
-  document.getElementById("resultsCard");
-
-const resultsBox =
-  document.getElementById("results");
-
-const debugBox =
-  document.getElementById("debug");
-
-
-/*
-============================================================
-STATE
-============================================================
-*/
+const photoInput = document.getElementById("photoInput");
+const preview = document.getElementById("preview");
+const analyzeButton = document.getElementById("analyzeButton");
+const status = document.getElementById("status");
+const resultCard = document.getElementById("resultCard");
+const resultsList = document.getElementById("resultsList");
+const mainResult = document.getElementById("mainResult");
 
 let selectedFile = null;
-let previewURL = null;
-let classifier = null;
-let loading = false;
+let imageURL = null;
+let segmenter = null;
 
 
-/*
-============================================================
-STATUS
-============================================================
-*/
+/* ---------------------------------------------------------
+   STATUS
+--------------------------------------------------------- */
 
-function setStatus(message, type = "") {
+function showStatus(message, type = "info") {
 
-  statusBox.className =
-    "status " + type;
-
-  statusBox.innerHTML =
-    message;
-
+    status.className = "status " + type;
+    status.textContent = message;
 }
 
 
-/*
-============================================================
-ESCAPE HTML
-============================================================
-*/
+/* ---------------------------------------------------------
+   FILE SELECTION
+--------------------------------------------------------- */
 
-function escapeHTML(value) {
+photoInput.addEventListener("change", function () {
 
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    selectedFile = this.files && this.files[0];
 
-}
+    resultCard.style.display = "none";
+    resultsList.innerHTML = "";
+    mainResult.innerHTML = "";
 
+    if (!selectedFile) {
 
-/*
-============================================================
-PHOTO SELECTION
-============================================================
-*/
+        analyzeButton.disabled = true;
+        preview.style.display = "none";
 
-photoInput.addEventListener(
-  "change",
-  () => {
-
-    const file =
-      photoInput.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-
-      setStatus(
-        "Please choose an image.",
-        "error"
-      );
-
-      return;
-    }
-
-    selectedFile =
-      file;
-
-    if (previewURL) {
-
-      URL.revokeObjectURL(
-        previewURL
-      );
-
-    }
-
-    previewURL =
-      URL.createObjectURL(
-        file
-      );
-
-    preview.src =
-      previewURL;
-
-    preview.style.display =
-      "block";
-
-    runButton.disabled =
-      false;
-
-    resultsCard.style.display =
-      "none";
-
-    resultsBox.innerHTML =
-      "";
-
-    debugBox.style.display =
-      "none";
-
-    setStatus(
-      "Photo selected. Tap <b>Run small AI</b>.",
-      "success"
-    );
-
-  }
-);
-
-
-/*
-============================================================
-MAKE SMALL IMAGE
-============================================================
-
-Reduce the photo before inference.
-
-This helps prevent memory problems on mobile Chrome.
-============================================================
-*/
-
-async function makeSmallImage(file) {
-
-  const sourceURL =
-    URL.createObjectURL(file);
-
-  try {
-
-    const image =
-      new Image();
-
-    await new Promise(
-      (resolve, reject) => {
-
-        image.onload =
-          resolve;
-
-        image.onerror =
-          () => reject(
-            new Error(
-              "Chrome could not decode the photo."
-            )
-          );
-
-        image.src =
-          sourceURL;
-
-      }
-    );
-
-    const MAX =
-      384;
-
-    let width =
-      image.naturalWidth;
-
-    let height =
-      image.naturalHeight;
-
-    const largest =
-      Math.max(
-        width,
-        height
-      );
-
-    if (largest > MAX) {
-
-      const scale =
-        MAX / largest;
-
-      width =
-        Math.round(
-          width * scale
+        showStatus(
+            "No photo selected.",
+            "info"
         );
 
-      height =
-        Math.round(
-          height * scale
+        return;
+    }
+
+
+    if (!selectedFile.type.startsWith("image/")) {
+
+        analyzeButton.disabled = true;
+        preview.style.display = "none";
+
+        showStatus(
+            "Please choose an image.",
+            "error"
         );
 
+        return;
     }
 
-    const canvas =
-      document.createElement(
-        "canvas"
-      );
 
-    canvas.width =
-      width;
-
-    canvas.height =
-      height;
-
-    const context =
-      canvas.getContext(
-        "2d",
-        {
-          alpha: false
-        }
-      );
-
-    if (!context) {
-
-      throw new Error(
-        "Chrome could not create the image canvas."
-      );
-
+    if (imageURL) {
+        URL.revokeObjectURL(imageURL);
     }
 
-    context.drawImage(
-      image,
-      0,
-      0,
-      width,
-      height
+    imageURL = URL.createObjectURL(selectedFile);
+
+    preview.src = imageURL;
+    preview.style.display = "block";
+
+    analyzeButton.disabled = false;
+
+    showStatus(
+        "Photo ready. Tap Analyze clothing.",
+        "success"
     );
 
-    const blob =
-      await new Promise(
-        (resolve, reject) => {
-
-          canvas.toBlob(
-            result => {
-
-              if (result) {
-                resolve(result);
-              } else {
-                reject(
-                  new Error(
-                    "Could not create resized image."
-                  )
-                );
-              }
-
-            },
-            "image/jpeg",
-            0.75
-          );
-
-        }
-      );
-
-    const url =
-      URL.createObjectURL(
-        blob
-      );
-
-    return {
-      url,
-      width,
-      height
-    };
-
-  }
-
-  finally {
-
-    URL.revokeObjectURL(
-      sourceURL
-    );
-
-  }
-
-}
+});
 
 
-/*
-============================================================
-LOAD MODEL
-============================================================
-*/
+/* ---------------------------------------------------------
+   LOAD MODEL
+--------------------------------------------------------- */
 
 async function loadModel() {
 
-  if (classifier) {
-    return classifier;
-  }
-
-  if (loading) {
-
-    while (loading) {
-
-      await new Promise(
-        resolve =>
-          setTimeout(
-            resolve,
-            200
-          )
-      );
-
+    if (segmenter) {
+        return segmenter;
     }
 
-    return classifier;
-  }
 
-  loading =
-    true;
-
-  try {
-
-    setStatus(
-      `
-        <b>Loading small AI…</b><br>
-        <span class="small">
-          This may take a little while the first time.
-        </span>
-      `,
-      "warning"
+    showStatus(
+        "Loading the clothing AI for the first time… this may take a little while.",
+        "info"
     );
 
-    classifier =
-      await pipeline(
-        "image-classification",
-        MODEL,
+
+    /*
+       This is the important model.
+
+       It is specifically:
+       Xenova/segformer_b0_clothes
+
+       We request the quantized version to keep the
+       browser workload smaller.
+    */
+
+    segmenter = await pipeline(
+        "image-segmentation",
+        "Xenova/segformer_b0_clothes",
         {
-          dtype: "q8",
-          device: "wasm"
+            dtype: "q8",
+            device: "wasm"
         }
-      );
+    );
 
-    return classifier;
 
-  }
-
-  finally {
-
-    loading =
-      false;
-
-  }
-
+    return segmenter;
 }
 
 
-/*
-============================================================
-SHOW RESULTS
-============================================================
-*/
+/* ---------------------------------------------------------
+   ANALYZE
+--------------------------------------------------------- */
 
-function showResults(output) {
+analyzeButton.addEventListener("click", async function () {
 
-  resultsBox.innerHTML =
-    "";
-
-  debugBox.style.display =
-    "none";
-
-  /*
-    Transformers.js image classification normally
-    returns:
-
-      [
-        {
-          label: "...",
-          score: 0.123
-        }
-      ]
-  */
-
-  let predictions =
-    output;
+    if (!selectedFile) {
+        showStatus(
+            "Please choose a photo first.",
+            "error"
+        );
+        return;
+    }
 
 
-  /*
-    Make the function tolerant of different
-    output shapes.
-  */
+    analyzeButton.disabled = true;
 
-  if (
-    !Array.isArray(predictions) &&
-    predictions?.data
-  ) {
+    resultCard.style.display = "none";
+    resultsList.innerHTML = "";
+    mainResult.innerHTML = "";
 
-    predictions =
-      predictions.data;
-
-  }
-
-
-  /*
-    Always show the results card once the AI
-    has completed.
-  */
-
-  resultsCard.style.display =
-    "block";
-
-
-  /*
-    If nothing came back, show diagnostic
-    information instead of leaving a blank card.
-  */
-
-  if (
-    !Array.isArray(predictions) ||
-    predictions.length === 0
-  ) {
-
-    resultsBox.innerHTML = `
-      <div class="result">
-
-        <div class="result-name">
-          AI ran, but returned no predictions
-        </div>
-
-        <div class="result-score">
-          The model executed successfully,
-          but its output was empty.
-        </div>
-
-      </div>
-    `;
-
-    debugBox.style.display =
-      "block";
 
     try {
 
-      debugBox.textContent =
-        JSON.stringify(
-          output,
-          null,
-          2
+        showStatus(
+            "Loading clothing AI…",
+            "info"
         );
 
-    }
 
-    catch {
-
-      debugBox.textContent =
-        String(output);
-
-    }
-
-    return;
-
-  }
+        const model = await loadModel();
 
 
-  /*
-    Display top predictions.
-  */
+        showStatus(
+            "AI loaded. Analyzing your clothing photo…",
+            "info"
+        );
 
-  predictions
-    .slice(0, 5)
-    .forEach(
-      item => {
 
-        const label =
-          item?.label ??
-          "Unknown";
+        /*
+           Pass the actual uploaded File to Transformers.js.
 
-        const score =
-          Number(
-            item?.score ?? 0
-          );
+           This avoids sending the photo to a server.
+        */
 
-        const percentage =
-          Math.round(
-            score * 100
-          );
+        const output = await model(selectedFile);
 
-        const safePercentage =
-          Math.max(
-            0,
-            Math.min(
-              100,
-              percentage
-            )
-          );
 
-        const row =
-          document.createElement(
-            "div"
-          );
+        if (!output || !Array.isArray(output)) {
 
-        row.className =
-          "result";
+            throw new Error(
+                "The model returned an unexpected result."
+            );
+        }
 
-        row.innerHTML = `
-          <div class="result-name">
-            ${escapeHTML(label)}
-          </div>
 
-          <div class="result-score">
-            ${safePercentage}% confidence
-          </div>
+        if (output.length === 0) {
 
-          <div class="bar">
-            <div
-              class="fill"
-              style="width:${safePercentage}%"
-            ></div>
-          </div>
+            throw new Error(
+                "The model returned no clothing regions."
+            );
+        }
+
+
+        /*
+           Sort results.
+
+           The segmentation pipeline returns objects
+           containing label, score and mask.
+        */
+
+        const sorted = [...output].sort(function(a, b) {
+
+            const scoreA =
+                typeof a.score === "number" ? a.score : 0;
+
+            const scoreB =
+                typeof b.score === "number" ? b.score : 0;
+
+            return scoreB - scoreA;
+        });
+
+
+        /*
+           Remove Background from the visible results.
+        */
+
+        const clothingResults = sorted.filter(function(item) {
+
+            const label =
+                String(item.label || "").toLowerCase();
+
+            return label !== "background";
+
+        });
+
+
+        if (clothingResults.length === 0) {
+
+            throw new Error(
+                "The model ran, but no clothing regions were returned."
+            );
+        }
+
+
+        /*
+           MAIN RESULT
+        */
+
+        const top = clothingResults[0];
+
+        const topLabel =
+            top.label || "Unknown";
+
+        let topScore = null;
+
+        if (typeof top.score === "number") {
+
+            topScore = Math.round(top.score * 100);
+
+        }
+
+
+        mainResult.innerHTML = `
+
+            <div class="big-result">
+                ${escapeHTML(topLabel)}
+            </div>
+
+            <div class="note">
+                ${topScore !== null
+                    ? topScore + "% model confidence"
+                    : "Clothing region detected"}
+            </div>
+
         `;
 
-        resultsBox.appendChild(
-          row
+
+        /*
+           ALL CLOTHING REGIONS
+        */
+
+        clothingResults.forEach(function(item) {
+
+            const label =
+                item.label || "Unknown";
+
+            const score =
+                typeof item.score === "number"
+                    ? Math.round(item.score * 100)
+                    : null;
+
+
+            const row =
+                document.createElement("div");
+
+            row.className = "result-item";
+
+
+            const scoreText =
+                score !== null
+                    ? score + "% confidence"
+                    : "Detected";
+
+
+            const barWidth =
+                score !== null
+                    ? Math.max(2, Math.min(100, score))
+                    : 50;
+
+
+            row.innerHTML = `
+
+                <div class="result-label">
+                    ${escapeHTML(label)}
+                </div>
+
+                <div class="result-description">
+                    ${scoreText}
+                </div>
+
+                <div class="bar">
+                    <div
+                        class="bar-fill"
+                        style="width:${barWidth}%">
+                    </div>
+                </div>
+
+            `;
+
+
+            resultsList.appendChild(row);
+
+        });
+
+
+        resultCard.style.display = "block";
+
+
+        showStatus(
+            "✓ Analysis complete. The clothing model ran locally in Chrome.",
+            "success"
         );
 
-      }
-    );
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        let message =
+            error && error.message
+                ? error.message
+                : String(error);
+
+
+        showStatus(
+            "The clothing AI test failed: " + message,
+            "error"
+        );
+
+
+    } finally {
+
+        analyzeButton.disabled = false;
+
+    }
+
+});
+
+
+/* ---------------------------------------------------------
+   SAFE HTML
+--------------------------------------------------------- */
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 
 }
-
-
-/*
-============================================================
-RUN AI
-============================================================
-*/
-
-runButton.addEventListener(
-  "click",
-  async () => {
-
-    if (
-      !selectedFile ||
-      loading
-    ) {
-
-      return;
-
-    }
-
-    runButton.disabled =
-      true;
-
-    resultsCard.style.display =
-      "none";
-
-    resultsBox.innerHTML =
-      "";
-
-    debugBox.style.display =
-      "none";
-
-    let smallImage =
-      null;
-
-    try {
-
-      /*
-      ------------------------------------------------------
-      STEP 1
-      ------------------------------------------------------
-      */
-
-      setStatus(
-        "Preparing photo…"
-      );
-
-      smallImage =
-        await makeSmallImage(
-          selectedFile
-        );
-
-
-      /*
-      ------------------------------------------------------
-      STEP 2
-      ------------------------------------------------------
-      */
-
-      const ai =
-        await loadModel();
-
-
-      /*
-      ------------------------------------------------------
-      STEP 3
-      ------------------------------------------------------
-      */
-
-      setStatus(
-        `
-          <b>AI is running locally…</b><br>
-          <span class="small">
-            Your photo is being processed on the phone.
-          </span>
-        `,
-        "warning"
-      );
-
-
-      /*
-      IMPORTANT:
-
-      The correct Transformers.js option is:
-
-          top_k
-
-      NOT:
-
-          topk
-      */
-
-      const output =
-        await ai(
-          smallImage.url,
-          {
-            top_k: 5
-          }
-        );
-
-
-      /*
-      ------------------------------------------------------
-      STEP 4
-      ------------------------------------------------------
-      */
-
-      showResults(
-        output
-      );
-
-
-      /*
-      ------------------------------------------------------
-      SUCCESS
-      ------------------------------------------------------
-      */
-
-      setStatus(
-        `
-          <b>✓ It worked!</b><br>
-          <span class="small">
-            Chrome successfully ran the local AI model
-            and returned its output.
-          </span>
-        `,
-        "success"
-      );
-
-    }
-
-    catch (error) {
-
-      console.error(
-        "AI TEST ERROR:",
-        error
-      );
-
-      const message =
-        error?.message ||
-        String(error);
-
-      resultsCard.style.display =
-        "block";
-
-      resultsBox.innerHTML = `
-        <div class="result">
-
-          <div class="result-name">
-            AI error
-          </div>
-
-          <div class="result-score">
-            ${escapeHTML(message)}
-          </div>
-
-        </div>
-      `;
-
-      setStatus(
-        `
-          <b>The AI test failed.</b>
-          <br><br>
-          <span class="small">
-            ${escapeHTML(message)}
-          </span>
-        `,
-        "error"
-      );
-
-    }
-
-    finally {
-
-      if (
-        smallImage?.url
-      ) {
-
-        URL.revokeObjectURL(
-          smallImage.url
-        );
-
-      }
-
-      runButton.disabled =
-        false;
-
-    }
-
-  }
-);
 
 </script>
 
