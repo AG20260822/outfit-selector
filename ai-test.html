@@ -1,2042 +1,1217 @@
-/*
-  INDEX · OUTFIT SELECTOR
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
 
-  Stable wardrobe version.
+  <title>Clothing AI Test</title>
 
-  - Photos stay locally in the browser.
-  - No external AI model is loaded.
-  - iPhone can choose an existing photo OR take a new one.
-  - Each clothing item gets useful styling attributes:
-      category
-      weather
-      dressiness
-      style
-      note
-  - The outfit selector uses those attributes.
-*/
-
-const LIBRARY_VERSION = "fresh-library-1";
-
-let W = [];
-let unavailable = [];
-let feedback = [];
-
-const $ = s => document.querySelector(s);
-
-/* -------------------------------------------------------
-   LOAD LOCAL LIBRARY
-------------------------------------------------------- */
-
-try {
-  const savedVersion =
-    localStorage.getItem("libraryVersion");
-
-  if (savedVersion !== LIBRARY_VERSION) {
-    localStorage.removeItem("addedWardrobe");
-
-    localStorage.setItem(
-      "libraryVersion",
-      LIBRARY_VERSION
-    );
-
-    localStorage.removeItem("unavailable");
-  }
-} catch (e) {
-  console.warn("Could not initialize library.", e);
-}
-
-try {
-  unavailable = JSON.parse(
-    localStorage.getItem("unavailable") || "[]"
-  );
-} catch (e) {
-  unavailable = [];
-}
-
-try {
-  feedback = JSON.parse(
-    localStorage.getItem("outfitFeedback") || "[]"
-  );
-} catch (e) {
-  feedback = [];
-}
-
-try {
-  const added = JSON.parse(
-    localStorage.getItem("addedWardrobe") || "[]"
-  );
-
-  if (Array.isArray(added)) {
-    W = added;
-  }
-} catch (e) {
-  W = [];
-}
-
-/* -------------------------------------------------------
-   INITIALIZE
-------------------------------------------------------- */
-
-function init() {
-
-  let mood = "any";
-  let style = "any";
-  let weather = "mild";
-  let chosen = null;
-  let current = [];
-
-  const picker = $("#picker");
-
-  window.picker = picker;
-
-  const photoInput = $("#photoInput");
-
-  /*
-    IMPORTANT:
-    Remove capture="environment".
-
-    This allows iPhone to offer:
-      - Take Photo
-      - Choose Existing Photo
-      - Photo Library
-  */
-
-  if (photoInput) {
-    photoInput.removeAttribute("capture");
-  }
-
-  /* -----------------------------------------------------
-     HELPERS
-  ----------------------------------------------------- */
-
-  const available = () =>
-    W.filter(
-      x => !unavailable.includes(x.id)
-    );
-
-  function updateCount() {
-    const count = $("#count");
-
-    if (count) {
-      count.textContent = W.length;
-    }
-  }
-
-  function escapeHTML(value) {
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  /*
-    Older items may not yet have the new metadata.
-    Give them sensible defaults.
-  */
-
-  function normalizeItem(x) {
-
-    const name =
-      String(x.name || "").toLowerCase();
-
-    const note =
-      String(x.note || "").toLowerCase();
-
-    const text =
-      name + " " + note;
-
-    let type = x.type || "top";
-
-    if (
-      text.includes("jean") ||
-      text.includes("trouser") ||
-      text.includes("pant") ||
-      text.includes("skirt") ||
-      text.includes("short")
-    ) {
-      type = "bottom";
+  <style>
+    * {
+      box-sizing: border-box;
     }
 
-    if (
-      text.includes("shoe") ||
-      text.includes("sneaker") ||
-      text.includes("loafer") ||
-      text.includes("boot")
-    ) {
-      type = "shoes";
+    body {
+      margin: 0;
+      background: #f7f6f3;
+      color: #171717;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
     }
 
-    if (
-      text.includes("blazer") ||
-      text.includes("jacket") ||
-      text.includes("coat") ||
-      text.includes("cardigan")
-    ) {
-      type = "layer";
+    .page {
+      width: min(760px, 100%);
+      margin: 0 auto;
+      padding: 24px 18px 60px;
     }
 
-    let itemWeather =
-      x.weather || "mild";
-
-    let dressiness =
-      x.dressiness || "casual";
-
-    let itemStyle =
-      x.style || "classic";
-
-    if (
-      text.includes("linen") ||
-      text.includes("camisole") ||
-      text.includes("short") ||
-      text.includes("light")
-    ) {
-      itemWeather = "warm";
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #777;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
     }
 
-    if (
-      text.includes("coat") ||
-      text.includes("jacket") ||
-      text.includes("sweater") ||
-      text.includes("wool")
-    ) {
-      itemWeather = "cold";
+    h1 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 44px;
+      line-height: 1.05;
+      font-weight: 400;
     }
 
-    if (
-      text.includes("blazer") ||
-      text.includes("loafer") ||
-      text.includes("trouser") ||
-      text.includes("dress")
-    ) {
-      dressiness = "smart";
+    .intro {
+      margin: 14px 0 26px;
+      color: #666;
+      font-size: 18px;
+      line-height: 1.45;
     }
 
-    if (
-      text.includes("sneaker") ||
-      text.includes("jean") ||
-      text.includes("t-shirt") ||
-      text.includes("tshirt")
-    ) {
-      dressiness = "casual";
+    .card {
+      background: #fff;
+      border: 1px solid #dedbd5;
+      border-radius: 28px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
     }
 
-    if (
-      text.includes("stripe") ||
-      text.includes("pattern") ||
-      text.includes("statement")
-    ) {
-      itemStyle = "interesting";
+    .card h2 {
+      margin: 0 0 16px;
+      font-size: 20px;
     }
 
-    return {
-      ...x,
-      type,
-      weather: itemWeather,
-      dressiness,
-      style: itemStyle,
-      note: x.note || ""
-    };
-  }
-
-  W = W.map(normalizeItem);
-
-  /* -----------------------------------------------------
-     FEEDBACK
-  ----------------------------------------------------- */
-
-  function recordFeedback(kind, outfit) {
-
-    feedback.push({
-      kind,
-      outfit: outfit.map(x => x.id),
-      at: Date.now()
-    });
-
-    if (feedback.length > 100) {
-      feedback = feedback.slice(-100);
+    .upload-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
 
-    localStorage.setItem(
-      "outfitFeedback",
-      JSON.stringify(feedback)
-    );
-  }
+    .upload-button,
+    .camera-button,
+    .analyze-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 58px;
+      border-radius: 18px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-  function feedbackBias(x) {
+    .upload-button {
+      background: #eeeeec;
+      border: 1px solid #d8d6d1;
+      color: #147fe8;
+    }
 
-    let yes = 0;
-    let no = 0;
+    .camera-button {
+      background: #eeeeec;
+      border: 1px solid #d8d6d1;
+      color: #171717;
+    }
 
-    feedback.forEach(f => {
+    input[type="file"] {
+      display: none;
+    }
 
-      if (f.outfit.includes(x.id)) {
+    .preview-wrap {
+      display: none;
+      margin-top: 18px;
+    }
 
-        if (f.kind === "yes") {
-          yes++;
-        }
+    .preview-wrap.visible {
+      display: block;
+    }
 
-        if (f.kind === "no") {
-          no++;
-        }
+    #preview {
+      display: block;
+      width: 100%;
+      max-height: 65vh;
+      object-fit: contain;
+      border-radius: 22px;
+      background: #f0efec;
+    }
+
+    .filename {
+      margin-top: 10px;
+      color: #777;
+      font-size: 14px;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .analyze-button {
+      width: 100%;
+      margin-top: 18px;
+      border: 0;
+      background: #151515;
+      color: #fff;
+    }
+
+    .analyze-button:disabled {
+      background: #aaa;
+      cursor: default;
+    }
+
+    .status {
+      display: none;
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: #f0efec;
+      color: #444;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
+    .status.visible {
+      display: block;
+    }
+
+    .status.success {
+      background: #eaf7ed;
+      color: #236b36;
+    }
+
+    .status.error {
+      background: #fff0ef;
+      color: #8b2722;
+    }
+
+    .progress {
+      height: 8px;
+      margin-top: 12px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #ddd;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: 99px;
+      background: #151515;
+      transition: width 0.2s ease;
+    }
+
+    .results {
+      display: none;
+    }
+
+    .results.visible {
+      display: block;
+    }
+
+    .result-title {
+      margin: 0 0 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 34px;
+      font-weight: 400;
+    }
+
+    .result-subtitle {
+      margin: 0 0 20px;
+      color: #777;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    .result-item {
+      padding: 15px 0;
+      border-top: 1px solid #e4e1dc;
+    }
+
+    .result-item:first-child {
+      border-top: 0;
+    }
+
+    .result-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .result-score {
+      color: #777;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .bar {
+      height: 9px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #e1e1df;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 99px;
+      background: #151515;
+      transition: width 0.5s ease;
+    }
+
+    .interpretation {
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: 18px;
+      background: #f5f4f1;
+    }
+
+    .interpretation strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .privacy {
+      color: #777;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .small {
+      color: #888;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 520px) {
+      .page {
+        padding: 20px 14px 50px;
       }
-    });
 
-    return yes * 2 - no * 3;
-  }
+      h1 {
+        font-size: 38px;
+      }
 
-  /* -----------------------------------------------------
-     ITEM CARD
-  ----------------------------------------------------- */
+      .card {
+        border-radius: 22px;
+        padding: 18px;
+      }
 
-  function card(x) {
-
-    const image = x.image
-      ? `
-        <img
-          src="${x.image}"
-          alt="${escapeHTML(x.name)}"
-          loading="lazy"
-        >
-      `
-      : "";
-
-    return `
-      <div
-        class="item ${
-          unavailable.includes(x.id)
-            ? "unavail"
-            : ""
-        }"
-        data-id="${escapeHTML(x.id)}"
-      >
-
-        ${
-          unavailable.includes(x.id)
-            ? '<span class="badge">Unavailable</span>'
-            : ""
-        }
-
-        ${image}
-
-        <div class="meta">
-          <b>${escapeHTML(x.name)}</b>
-          <small>
-            ${escapeHTML(x.note || "")}
-          </small>
-        </div>
-
-      </div>
-    `;
-  }
-
-  /* -----------------------------------------------------
-     CLOSET
-  ----------------------------------------------------- */
-
-  function renderCloset() {
-
-    const closet = $("#closet");
-
-    if (!closet) {
-      return;
+      .upload-row {
+        grid-template-columns: 1fr;
+      }
     }
+  </style>
+</head>
 
-    updateCount();
+<body>
 
-    if (W.length === 0) {
+  <main class="page">
 
-      closet.innerHTML = `
-        <div
-          style="
-            grid-column:1/-1;
-            padding:22px 8px;
-            text-align:center;
-            color:#777;
-          "
-        >
-          <div
-            style="
-              font-size:34px;
-              margin-bottom:8px
-            "
+    <p class="eyebrow">Private experiment</p>
+
+    <h1>Clothing AI</h1>
+
+    <p class="intro">
+      Let's see whether a small local AI model can recognise clothing
+      in your photos.
+    </p>
+
+    <!-- PHOTO -->
+    <section class="card">
+
+      <h2>1. Choose a photo</h2>
+
+      <div class="upload-row">
+
+        <!-- Existing photo / photo library -->
+        <label class="upload-button">
+          📷 Choose a photo
+          <input
+            id="photoInput"
+            type="file"
+            accept="image/*"
           >
-            👗
-          </div>
+        </label>
+
+        <!-- Camera -->
+        <label class="camera-button">
+          📸 Take a photo
+          <input
+            id="cameraInput"
+            type="file"
+            accept="image/*"
+            capture="environment"
+          >
+        </label>
 
-          <b>Your closet is empty</b>
-
-          <div style="margin-top:5px">
-            Add your first clothing photo below.
-          </div>
-        </div>
-      `;
-
-      return;
-    }
-
-    closet.innerHTML =
-      W.map(card).join("");
-
-    document
-      .querySelectorAll("#closet .item")
-      .forEach(el => {
-
-        el.onclick = () => {
-
-          chosen = W.find(
-            x => x.id === el.dataset.id
-          );
-
-          if (chosen) {
-            showChoice(chosen);
-          }
-        };
-
-      });
-  }
-
-  /* -----------------------------------------------------
-     COMPATIBILITY
-  ----------------------------------------------------- */
-
-  function compatible(a, b) {
-
-    if (
-      a.type === "bottom" &&
-      b.type === "bottom"
-    ) {
-      return false;
-    }
-
-    if (
-      a.type === "shoes" &&
-      b.type === "shoes"
-    ) {
-      return false;
-    }
-
-    if (
-      a.type === "top" &&
-      b.type === "top"
-    ) {
-      return false;
-    }
-
-    if (
-      a.type === "layer" &&
-      b.type === "layer"
-    ) {
-      return false;
-    }
-
-    return true;
-  }
-
-  /* -----------------------------------------------------
-     SCORING
-  ----------------------------------------------------- */
-
-  function score(x) {
-
-    let s = 2;
-
-    /*
-      WEATHER
-    */
-
-    if (weather !== "any") {
-
-      if (x.weather === weather) {
-        s += 8;
-      }
-
-      /*
-        Mild pieces can work in both mild
-        and transitional situations.
-      */
-
-      if (
-        weather === "mild" &&
-        x.weather === "warm"
-      ) {
-        s += 2;
-      }
-
-      if (
-        weather === "mild" &&
-        x.weather === "cold"
-      ) {
-        s += 1;
-      }
-    }
-
-    /*
-      DRESSINESS
-    */
-
-    if (style === "casual") {
-
-      if (x.dressiness === "casual") {
-        s += 8;
-      }
-
-      if (x.dressiness === "smart") {
-        s -= 2;
-      }
-    }
-
-    if (style === "semi") {
-
-      if (x.dressiness === "smart") {
-        s += 8;
-      }
-
-      if (x.dressiness === "casual") {
-        s += 1;
-      }
-    }
-
-    /*
-      SOMETHING INTERESTING
-    */
-
-    if (style === "interesting") {
-
-      if (x.style === "interesting") {
-        s += 8;
-      }
-
-      if (x.style === "statement") {
-        s += 8;
-      }
-    }
-
-    /*
-      MOOD
-    */
-
-    if (mood === "comfy") {
-
-      const text =
-        (
-          x.name +
-          " " +
-          (x.note || "")
-        ).toLowerCase();
-
-      if (
-        text.includes("comfy") ||
-        text.includes("comfortable") ||
-        text.includes("soft")
-      ) {
-        s += 7;
-      }
-    }
-
-    if (mood === "good") {
-
-      const text =
-        (
-          x.name +
-          " " +
-          (x.note || "")
-        ).toLowerCase();
-
-      if (
-        text.includes("favorite") ||
-        text.includes("love") ||
-        text.includes("like") ||
-        text.includes("often")
-      ) {
-        s += 5;
-      }
-    }
-
-    /*
-      USER FEEDBACK
-    */
-
-    s += feedbackBias(x);
-
-    /*
-      Small randomness means repeated
-      "Surprise me" doesn't always give
-      exactly the same result.
-    */
-
-    s += Math.random() * 2;
-
-    return s;
-  }
-
-  /* -----------------------------------------------------
-     PICK ITEM
-  ----------------------------------------------------- */
-
-  function pickType(type, currentOutfit) {
-
-    const pool =
-      available().filter(
-        x =>
-          x.type === type &&
-          !currentOutfit.some(
-            y => y.id === x.id
-          ) &&
-          currentOutfit.every(
-            y => compatible(y, x)
-          )
-      );
-
-    if (!pool.length) {
-      return null;
-    }
-
-    return pool.sort(
-      (a, b) =>
-        score(b) - score(a)
-    )[0];
-  }
-
-  /* -----------------------------------------------------
-     GENERATE OUTFIT
-  ----------------------------------------------------- */
-
-  function generate(seed = null) {
-
-    const pool = available();
-
-    if (!pool.length) {
-      return [];
-    }
-
-    const result =
-      seed ? [seed] : [];
-
-    /*
-      BOTTOM
-    */
-
-    if (
-      !result.some(
-        x => x.type === "bottom"
-      )
-    ) {
-
-      const bottom =
-        pickType(
-          "bottom",
-          result
-        );
-
-      if (bottom) {
-        result.push(bottom);
-      }
-    }
-
-    /*
-      TOP
-    */
-
-    if (
-      !result.some(
-        x => x.type === "top"
-      )
-    ) {
-
-      const tops =
-        pool
-          .filter(
-            x =>
-              x.type === "top" &&
-              !result.some(
-                y => y.id === x.id
-              ) &&
-              result.every(
-                y => compatible(y, x)
-              )
-          )
-          .sort(
-            (a, b) =>
-              score(b) - score(a)
-          );
-
-      if (tops[0]) {
-        result.push(tops[0]);
-      }
-    }
-
-    /*
-      COLD WEATHER LAYER
-    */
-
-    if (weather === "cold") {
-
-      const layer =
-        pickType(
-          "layer",
-          result
-        );
-
-      if (layer) {
-        result.push(layer);
-      }
-    }
-
-    /*
-      SHOES
-    */
-
-    const shoes =
-      pickType(
-        "shoes",
-        result
-      );
-
-    if (shoes) {
-      result.push(shoes);
-    }
-
-    /*
-      ACCESSORY
-    */
-
-    if (
-      style === "semi" ||
-      style === "interesting" ||
-      mood === "good"
-    ) {
-
-      const accessory =
-        pickType(
-          "accessory",
-          result
-        );
-
-      if (accessory) {
-        result.push(accessory);
-      }
-    }
-
-    return result;
-  }
-
-  /* -----------------------------------------------------
-     EMPTY CLOSET
-  ----------------------------------------------------- */
-
-  function showEmptyCloset() {
-
-    $("#result").classList.add("show");
-
-    $("#result").innerHTML = `
-      <div class="section-title">
-        YOUR CLOSET IS EMPTY
       </div>
 
-      <h2>
-        Let's add your first piece.
-      </h2>
-
-      <p>
-        Take a photo or choose an existing
-        photo from your phone.
+      <p class="small">
+        On iPhone, “Choose a photo” should let you select an existing
+        picture from your Photos library. “Take a photo” opens the camera.
       </p>
 
-      <div class="tools">
-        <button id="addFirst">
-          📸 Add my first clothing photo
-        </button>
-      </div>
-    `;
+      <div id="previewWrap" class="preview-wrap">
 
-    $("#addFirst").onclick = () => {
-      $("#photoInput").click();
-    };
+        <img id="preview" alt="Selected clothing photo">
 
-    $("#result").scrollIntoView({
-      behavior: "smooth",
-      block: "nearest"
-    });
-  }
+        <div id="filename" class="filename"></div>
 
-  /* -----------------------------------------------------
-     SHOW OUTFIT
-  ----------------------------------------------------- */
-
-  function show(title, outfit, note) {
-
-    current = outfit;
-
-    if (!outfit.length) {
-      showEmptyCloset();
-      return;
-    }
-
-    $("#result").classList.add("show");
-
-    $("#result").innerHTML = `
-      <div class="section-title">
-        STYLIST SUGGESTION
       </div>
 
-      <h2>
-        ${escapeHTML(title)}
+      <button
+        id="analyzeButton"
+        class="analyze-button"
+        type="button"
+        disabled
+      >
+        Analyze image
+      </button>
+
+      <div id="status" class="status"></div>
+
+    </section>
+
+
+    <!-- RESULTS -->
+    <section id="results" class="card results">
+
+      <p class="eyebrow">AI result</p>
+
+      <h2 id="resultTitle" class="result-title">
+        Clothing detected
       </h2>
 
-      <p>
-        ${
-          chosen
-            ? `🔒 ${escapeHTML(chosen.name)} stays — I’ll change the pieces around it.`
-            : escapeHTML(note || "")
-        }
+      <p id="resultSubtitle" class="result-subtitle">
+        The model's strongest clothing regions are shown below.
       </p>
 
-      <div class="look">
-        ${outfit.map(card).join("")}
-      </div>
+      <div id="resultList"></div>
 
-      <div class="tools">
+      <div class="interpretation">
 
-        <button id="like">
-          ❤️ Yes
-        </button>
+        <strong>What does this mean?</strong>
 
-        <button id="dislike">
-          👎 No
-        </button>
-
-        <button id="new">
-          ↻ Try another
-        </button>
-
-        <button id="change">
-          🔄 Change one thing
-        </button>
-
-        <button id="alts">
-          🎲 Alternatives
-        </button>
-
-      </div>
-
-      <div
-        id="feedback-note"
-        class="hint"
-      ></div>
-    `;
-
-    $("#result")
-      .querySelectorAll(".item")
-      .forEach(el => {
-
-        el.onclick = () => {
-          toggle(el.dataset.id);
-        };
-
-      });
-
-    $("#like").onclick = () => {
-
-      recordFeedback(
-        "yes",
-        current
-      );
-
-      $("#feedback-note").textContent =
-        "Got it ❤️ I’ll use that signal for future suggestions.";
-    };
-
-    $("#dislike").onclick = () => {
-
-      recordFeedback(
-        "no",
-        current
-      );
-
-      $("#feedback-note").textContent =
-        "Got it 👌 I’ll use that signal for future suggestions.";
-    };
-
-    $("#new").onclick = () => {
-
-      const anchor =
-        chosen || null;
-
-      show(
-        title,
-        generate(anchor),
-        anchor
-          ? `Same ${anchor.name}, with a different combination around it.`
-          : "Another option based on your current choices."
-      );
-    };
-
-    $("#change").onclick =
-      changeOne;
-
-    $("#alts").onclick =
-      alternatives;
-
-    $("#result").scrollIntoView({
-      behavior: "smooth",
-      block: "nearest"
-    });
-  }
-
-  /* -----------------------------------------------------
-     TOGGLE AVAILABILITY
-  ----------------------------------------------------- */
-
-  function toggle(id) {
-
-    unavailable =
-      unavailable.includes(id)
-        ? unavailable.filter(
-            x => x !== id
-          )
-        : [
-            ...unavailable,
-            id
-          ];
-
-    localStorage.setItem(
-      "unavailable",
-      JSON.stringify(unavailable)
-    );
-
-    renderCloset();
-  }
-
-  /* -----------------------------------------------------
-     START WITH ITEM
-  ----------------------------------------------------- */
-
-  function openPicker() {
-
-    const grid =
-      $("#pickgrid");
-
-    if (!available().length) {
-      picker.close();
-      showEmptyCloset();
-      return;
-    }
-
-    grid.innerHTML =
-      available()
-        .map(
-          x => `
-            <button
-              class="pick"
-              data-pick="${escapeHTML(x.id)}"
-            >
-
-              ${
-                x.image
-                  ? `
-                    <img
-                      src="${x.image}"
-                      alt="${escapeHTML(x.name)}"
-                    >
-                  `
-                  : ""
-              }
-
-              <b>
-                ${escapeHTML(x.name)}
-              </b>
-
-            </button>
-          `
-        )
-        .join("");
-
-    document
-      .querySelectorAll("[data-pick]")
-      .forEach(b => {
-
-        b.onclick = () => {
-
-          chosen =
-            W.find(
-              x =>
-                x.id ===
-                b.dataset.pick
-            );
-
-          picker.close();
-
-          if (chosen) {
-            showChoice(chosen);
-          }
-        };
-
-      });
-
-    picker.showModal();
-  }
-
-  /* -----------------------------------------------------
-     SHOW CHOSEN ITEM
-  ----------------------------------------------------- */
-
-  function showChoice(item) {
-
-    $("#result").classList.add("show");
-
-    $("#result").innerHTML = `
-      <div class="section-title">
-        YOUR STARTING POINT
-      </div>
-
-      <h2>
-        ${escapeHTML(item.name)}
-      </h2>
-
-      <div class="look">
-        ${card(item)}
-      </div>
-
-      <p>
-        What should I do with it?
-      </p>
-
-      <div class="tools">
-
-        <button id="build">
-          ✨ Build me an outfit
-        </button>
-
-        <button id="ways">
-          🎲 Show me alternatives
-        </button>
-
-        <button id="goes">
-          👀 What goes with this?
-        </button>
-
-      </div>
-    `;
-
-    $("#build").onclick = () => {
-
-      show(
-        "Built around your choice",
-        generate(item),
-        "A complete look built around your chosen piece."
-      );
-    };
-
-    $("#ways").onclick = () => {
-      showAlternatives(item);
-    };
-
-    $("#goes").onclick = () => {
-      showCompatible(item);
-    };
-
-    $("#result").scrollIntoView({
-      behavior: "smooth",
-      block: "nearest"
-    });
-  }
-
-  /* -----------------------------------------------------
-     WHAT GOES WITH THIS
-  ----------------------------------------------------- */
-
-  function showCompatible(item) {
-
-    const matches =
-      available()
-        .filter(
-          x =>
-            x.id !== item.id &&
-            compatible(item, x)
-        )
-        .sort(
-          (a, b) =>
-            score(b) - score(a)
-        )
-        .slice(0, 6);
-
-    $("#result").classList.add("show");
-
-    if (!matches.length) {
-
-      $("#result").innerHTML = `
-        <div class="section-title">
-          WHAT GOES WITH IT
+        <div id="interpretationText">
+          This model identifies clothing regions in an image.
+          It does not yet understand your personal style, weather,
+          formality, or whether you like an item.
         </div>
 
-        <h2>
-          ${escapeHTML(item.name)}
-        </h2>
-
-        <p>
-          Add a few more pieces to your closet
-          and I'll find combinations for this one.
-        </p>
-      `;
-
-      return;
-    }
-
-    $("#result").innerHTML = `
-      <div class="section-title">
-        WHAT GOES WITH IT
       </div>
 
-      <h2>
-        Good matches for
-        ${escapeHTML(item.name)}
-      </h2>
+    </section>
 
-      <p>
-        Pieces I'd reach for first.
+
+    <!-- PRIVACY -->
+    <section class="card">
+
+      <p class="eyebrow">Privacy</p>
+
+      <p class="privacy">
+        The photograph is processed in your browser.
+        It is not uploaded to an AI API for inference.
       </p>
 
-      <div class="look">
-        ${matches.map(card).join("")}
-      </div>
-
-      <div class="tools">
-        <button id="build2">
-          ✨ Build a complete outfit
-        </button>
-      </div>
-    `;
-
-    $("#build2").onclick = () => {
-
-      show(
-        "Built around your choice",
-        generate(item),
-        "A complete look built around your chosen piece."
-      );
-    };
-  }
-
-  /* -----------------------------------------------------
-     ALTERNATIVES
-  ----------------------------------------------------- */
-
-  function showAlternatives(item) {
-
-    if (!item) {
-      showEmptyCloset();
-      return;
-    }
-
-    const alternatives = [
-      generate(item),
-      generate(item),
-      generate(item)
-    ];
-
-    $("#result").classList.add("show");
-
-    $("#result").innerHTML = `
-      <div class="section-title">
-        ALTERNATIVES
-      </div>
-
-      <h2>
-        Three ways to wear it
-      </h2>
-
-      <p>
-        Same starting piece, different directions.
+      <p class="small">
+        The AI model itself is downloaded from Hugging Face the first
+        time you use the test and then can be cached by your browser.
+        The model performs inference on your device.
       </p>
 
-      ${alternatives
-        .map(
-          (outfit, i) => `
-            <div style="margin-top:18px">
+    </section>
 
-              <b>
-                Option ${i + 1}
-              </b>
+  </main>
 
-              <div class="look">
-                ${outfit
-                  .map(card)
-                  .join("")}
-              </div>
 
-            </div>
-          `
-        )
-        .join("")}
-    `;
-  }
+  <!--
+    Transformers.js
+    This is the browser version of Hugging Face Transformers.
+  -->
+  <script type="module">
 
-  /* -----------------------------------------------------
-     CHANGE ONE THING
-  ----------------------------------------------------- */
+    import {
+      pipeline,
+      RawImage
+    } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
-  function changeOne() {
-
-    if (!current.length) {
-      return;
-    }
-
-    const choices =
-      current
-        .filter(
-          x =>
-            !chosen ||
-            x.id !== chosen.id
-        )
-        .map(
-          x => `
-            <button
-              class="pick"
-              data-change="${escapeHTML(x.id)}"
-            >
-
-              ${
-                x.image
-                  ? `
-                    <img
-                      src="${x.image}"
-                      alt="${escapeHTML(x.name)}"
-                    >
-                  `
-                  : ""
-              }
-
-              <b>
-                Change ${escapeHTML(x.name)}
-              </b>
-
-            </button>
-          `
-        )
-        .join("");
-
-    if (!choices) {
-      return;
-    }
-
-    $("#pickgrid").innerHTML =
-      choices;
-
-    document
-      .querySelectorAll("[data-change]")
-      .forEach(b => {
-
-        b.onclick = () => {
-
-          const old =
-            W.find(
-              x =>
-                x.id ===
-                b.dataset.change
-            );
-
-          if (!old) {
-            return;
-          }
-
-          const replacement =
-            available()
-              .filter(
-                x =>
-                  x.type === old.type &&
-                  x.id !== old.id &&
-                  !current.some(
-                    y =>
-                      y.id === x.id
-                  )
-              )
-              .sort(
-                (a, b) =>
-                  score(b) -
-                  score(a)
-              )[0];
-
-          if (replacement) {
-
-            show(
-              "One thing changed",
-
-              current.map(x =>
-                x.id === old.id
-                  ? replacement
-                  : x
-              ),
-
-              "Same outfit direction, one fresh piece."
-            );
-
-          } else {
-
-            $("#result").innerHTML += `
-              <p class="hint">
-                You don't have another
-                ${escapeHTML(old.type)}
-                available yet.
-              </p>
-            `;
-          }
-
-          picker.close();
-        };
-
-      });
-
-    picker.showModal();
-  }
-
-  /* -----------------------------------------------------
-     ALTERNATIVES BUTTON
-  ----------------------------------------------------- */
-
-  function alternatives() {
-
-    const seed =
-      chosen ||
-      current.find(
-        x =>
-          x.type === "bottom"
-      ) ||
-      current[0];
-
-    if (!seed) {
-      showEmptyCloset();
-      return;
-    }
-
-    const variants = [
-      generate(seed),
-      generate(seed),
-      generate(seed)
-    ];
-
-    $("#result").classList.add("show");
-
-    $("#result").innerHTML = `
-      <div class="section-title">
-        ALTERNATIVES
-      </div>
-
-      <h2>
-        Three ways to wear it
-      </h2>
-
-      <p>
-        Same starting point, different feel.
-      </p>
-
-      ${variants
-        .map(
-          (outfit, i) => `
-            <div style="margin-top:18px">
-
-              <b>
-                Option ${i + 1}
-              </b>
-
-              <div class="look">
-                ${outfit
-                  .map(card)
-                  .join("")}
-              </div>
-
-            </div>
-          `
-        )
-        .join("")}
-    `;
-  }
-
-  /* -----------------------------------------------------
-     STYLE CHIPS
-  ----------------------------------------------------- */
-
-  document
-    .querySelectorAll("#styles .chip")
-    .forEach(b => {
-
-      b.onclick = () => {
-
-        document
-          .querySelectorAll("#styles .chip")
-          .forEach(x =>
-            x.classList.remove("active")
-          );
-
-        b.classList.add("active");
-
-        style =
-          b.dataset.style;
-      };
-    });
-
-  /* -----------------------------------------------------
-     MOOD CHIPS
-  ----------------------------------------------------- */
-
-  document
-    .querySelectorAll("#moods .chip")
-    .forEach(b => {
-
-      b.onclick = () => {
-
-        document
-          .querySelectorAll("#moods .chip")
-          .forEach(x =>
-            x.classList.remove("active")
-          );
-
-        b.classList.add("active");
-
-        mood =
-          b.dataset.mood;
-      };
-    });
-
-  /* -----------------------------------------------------
-     WEATHER CHIPS
-  ----------------------------------------------------- */
-
-  document
-    .querySelectorAll("#weather .chip")
-    .forEach(b => {
-
-      b.onclick = () => {
-
-        document
-          .querySelectorAll("#weather .chip")
-          .forEach(x =>
-            x.classList.remove("active")
-          );
-
-        b.classList.add("active");
-
-        weather =
-          b.dataset.weather;
-      };
-    });
-
-  /* -----------------------------------------------------
-     SURPRISE ME
-  ----------------------------------------------------- */
-
-  $("#surprise").onclick = () => {
-
-    if (!W.length) {
-      showEmptyCloset();
-      return;
-    }
-
-    show(
-      "A surprise for today",
-      generate(),
-      "Based on your style direction, mood and weather."
-    );
-  };
-
-  /* -----------------------------------------------------
-     START WITH ITEM
-  ----------------------------------------------------- */
-
-  $("#start").onclick =
-    openPicker;
-
-  /* -----------------------------------------------------
-     ADD PHOTO
-  ----------------------------------------------------- */
-
-  $("#addItem").onclick = () => {
-
-    photoInput.removeAttribute(
-      "capture"
-    );
-
-    photoInput.click();
-  };
-
-  /* -----------------------------------------------------
-     BUILD SMART CLOTHING FORM
-  ----------------------------------------------------- */
-
-  function buildClothingFields() {
-
-    const form =
-      $("#addForm");
-
-    if (!form) {
-      return;
-    }
 
     /*
-      We add these controls dynamically so
-      you do NOT need to change index.html.
-    */
+     * ============================================================
+     * SETTINGS
+     * ============================================================
+     */
 
-    if ($("#smartFields")) {
-      return;
-    }
+    const MODEL_ID = "Xenova/segformer_b0_clothes";
 
-    const fields =
-      document.createElement("div");
-
-    fields.id =
-      "smartFields";
-
-    fields.style.marginTop =
-      "12px";
-
-    fields.innerHTML = `
-
-      <div
-        style="
-          font-weight:700;
-          margin-bottom:8px;
-          font-size:15px;
-        "
-      >
-        A little more about this piece
-      </div>
-
-      <div
-        style="
-          color:#777;
-          font-size:14px;
-          margin-bottom:12px;
-        "
-      >
-        These details help the stylist know
-        when and how to wear it.
-      </div>
-
-      <label
-        style="
-          display:block;
-          font-size:13px;
-          color:#777;
-          margin-bottom:4px;
-        "
-      >
-        WEATHER
-      </label>
-
-      <select
-        id="itemWeather"
-        style="
-          width:100%;
-          padding:12px;
-          margin-bottom:8px;
-          border:1px solid #ddd;
-          border-radius:12px;
-        "
-      >
-        <option value="warm">
-          Warm / hot weather
-        </option>
-
-        <option value="mild" selected>
-          Mild / transitional
-        </option>
-
-        <option value="cold">
-          Cold weather
-        </option>
-      </select>
-
-      <label
-        style="
-          display:block;
-          font-size:13px;
-          color:#777;
-          margin-bottom:4px;
-        "
-      >
-        DRESSINESS
-      </label>
-
-      <select
-        id="itemDressiness"
-        style="
-          width:100%;
-          padding:12px;
-          margin-bottom:8px;
-          border:1px solid #ddd;
-          border-radius:12px;
-        "
-      >
-        <option value="casual">
-          Casual
-        </option>
-
-        <option value="smart">
-          Smart / dressy
-        </option>
-      </select>
-
-      <label
-        style="
-          display:block;
-          font-size:13px;
-          color:#777;
-          margin-bottom:4px;
-        "
-      >
-        STYLE
-      </label>
-
-      <select
-        id="itemStyle"
-        style="
-          width:100%;
-          padding:12px;
-          margin-bottom:8px;
-          border:1px solid #ddd;
-          border-radius:12px;
-        "
-      >
-        <option value="classic">
-          Classic / easy
-        </option>
-
-        <option value="interesting">
-          Interesting / statement
-        </option>
-      </select>
-
-      <label
-        style="
-          display:block;
-          font-size:13px;
-          color:#777;
-          margin-bottom:4px;
-        "
-      >
-        YOUR NOTE
-      </label>
-
-      <input
-        id="itemNote"
-        placeholder="e.g. wear very often"
-        style="
-          width:100%;
-          padding:12px;
-          margin-bottom:8px;
-          border:1px solid #ddd;
-          border-radius:12px;
-        "
-      />
-    `;
 
     /*
-      Put the smart fields before the save button.
-    */
+     * ============================================================
+     * ELEMENTS
+     * ============================================================
+     */
 
-    const saveButton =
-      $("#saveItem");
+    const photoInput =
+      document.getElementById("photoInput");
 
-    form.insertBefore(
-      fields,
-      saveButton
-    );
-  }
+    const cameraInput =
+      document.getElementById("cameraInput");
 
-  buildClothingFields();
+    const preview =
+      document.getElementById("preview");
 
-  /* -----------------------------------------------------
-     PHOTO SELECTED
-  ----------------------------------------------------- */
+    const previewWrap =
+      document.getElementById("previewWrap");
 
-  photoInput.onchange =
-    async e => {
+    const filename =
+      document.getElementById("filename");
 
-      const file =
-        e.target.files &&
-        e.target.files[0];
+    const analyzeButton =
+      document.getElementById("analyzeButton");
+
+    const status =
+      document.getElementById("status");
+
+    const results =
+      document.getElementById("results");
+
+    const resultTitle =
+      document.getElementById("resultTitle");
+
+    const resultSubtitle =
+      document.getElementById("resultSubtitle");
+
+    const resultList =
+      document.getElementById("resultList");
+
+    const interpretationText =
+      document.getElementById("interpretationText");
+
+
+    /*
+     * ============================================================
+     * STATE
+     * ============================================================
+     */
+
+    let selectedFile = null;
+
+    let selectedImageURL = null;
+
+    let segmenter = null;
+
+    let modelLoading = false;
+
+
+    /*
+     * ============================================================
+     * STATUS MESSAGE
+     * ============================================================
+     */
+
+    function showStatus(message, type = "") {
+
+      status.className = "status visible";
+
+      if (type) {
+        status.classList.add(type);
+      }
+
+      status.innerHTML = message;
+    }
+
+
+    function hideStatus() {
+
+      status.className = "status";
+
+      status.innerHTML = "";
+    }
+
+
+    /*
+     * ============================================================
+     * FILE HANDLING
+     * ============================================================
+     */
+
+    function handleFile(file) {
 
       if (!file) {
         return;
       }
 
-      if (
-        !file.type ||
-        !file.type.startsWith("image/")
-      ) {
+      if (!file.type.startsWith("image/")) {
 
-        alert(
-          "Please choose an image."
+        showStatus(
+          "Please choose an image file.",
+          "error"
         );
-
-        photoInput.value = "";
 
         return;
       }
 
-      const objectURL =
+      selectedFile = file;
+
+      if (selectedImageURL) {
+        URL.revokeObjectURL(selectedImageURL);
+      }
+
+      selectedImageURL =
         URL.createObjectURL(file);
 
-      const img =
-        new Image();
+      preview.src = selectedImageURL;
 
-      img.onload = () => {
+      filename.textContent =
+        file.name || "Selected photo";
+
+      previewWrap.classList.add("visible");
+
+      analyzeButton.disabled = false;
+
+      results.classList.remove("visible");
+
+      hideStatus();
+    }
+
+
+    photoInput.addEventListener(
+      "change",
+      event => {
+
+        const file =
+          event.target.files &&
+          event.target.files[0];
+
+        handleFile(file);
+      }
+    );
+
+
+    cameraInput.addEventListener(
+      "change",
+      event => {
+
+        const file =
+          event.target.files &&
+          event.target.files[0];
+
+        handleFile(file);
+      }
+    );
+
+
+    /*
+     * ============================================================
+     * LOAD AI MODEL
+     * ============================================================
+     */
+
+    async function loadModel() {
+
+      if (segmenter) {
+        return segmenter;
+      }
+
+      if (modelLoading) {
+        return null;
+      }
+
+      modelLoading = true;
+
+      showStatus(
+        `
+        <strong>Loading the clothing AI…</strong><br>
+        The small model is being downloaded to your browser.
+        This can take a little while the first time.
+        <div class="progress">
+          <div id="modelProgress" class="progress-bar"></div>
+        </div>
+        `
+      );
+
+      try {
+
+        const progressBar =
+          document.getElementById("modelProgress");
+
+
+        segmenter = await pipeline(
+          "image-segmentation",
+          MODEL_ID,
+          {
+
+            /*
+             * WASM is deliberately used here because it is
+             * broadly compatible with browsers, including Safari.
+             */
+
+            device: "wasm",
+
+            progress_callback: progress => {
+
+              if (!progressBar) {
+                return;
+              }
+
+              if (
+                typeof progress.progress === "number"
+              ) {
+
+                const value =
+                  Math.max(
+                    0,
+                    Math.min(
+                      100,
+                      progress.progress
+                    )
+                  );
+
+                progressBar.style.width =
+                  value + "%";
+              }
+            }
+
+          }
+        );
+
+
+        modelLoading = false;
+
+        showStatus(
+          `
+          ✓ Clothing AI loaded.<br>
+          The model is ready to analyze your photo.
+          `,
+          "success"
+        );
+
+        return segmenter;
+
+      } catch (error) {
+
+        modelLoading = false;
+
+        console.error(
+          "Model loading error:",
+          error
+        );
+
+        showStatus(
+          `
+          <strong>The clothing AI could not be loaded.</strong><br><br>
+          ${escapeHTML(
+            getUsefulError(error)
+          )}
+          `,
+          "error"
+        );
+
+        return null;
+      }
+    }
+
+
+    /*
+     * ============================================================
+     * ANALYZE IMAGE
+     * ============================================================
+     */
+
+    analyzeButton.addEventListener(
+      "click",
+      async () => {
+
+        if (!selectedFile) {
+
+          showStatus(
+            "Please choose a photo first.",
+            "error"
+          );
+
+          return;
+        }
+
+
+        analyzeButton.disabled = true;
+
+        results.classList.remove("visible");
+
+        showStatus(
+          `
+          <strong>Preparing your photo…</strong><br>
+          The photo stays in your browser.
+          `
+        );
+
 
         try {
 
           /*
-            Keep photos small enough for
-            local browser storage.
-          */
+           * Convert the local file into a RawImage.
+           *
+           * This avoids the "Unsupported input type: object"
+           * problem we encountered in the previous experiment.
+           */
 
-          const max = 1000;
-
-          const scale =
-            Math.min(
-              1,
-              max /
-                Math.max(
-                  img.width,
-                  img.height
-                )
+          const image =
+            await RawImage.fromBlob(
+              selectedFile
             );
 
-          const canvas =
-            document.createElement(
-              "canvas"
-            );
 
-          canvas.width =
-            Math.max(
-              1,
-              Math.round(
-                img.width * scale
-              )
-            );
-
-          canvas.height =
-            Math.max(
-              1,
-              Math.round(
-                img.height * scale
-              )
-            );
-
-          const ctx =
-            canvas.getContext(
-              "2d"
-            );
-
-          ctx.drawImage(
-            img,
-            0,
-            0,
-            canvas.width,
-            canvas.height
+          showStatus(
+            `
+            <strong>Loading clothing AI…</strong><br>
+            If this is the first test, the model may take a
+            little while to download.
+            `
           );
 
-          const photo =
-            canvas.toDataURL(
-              "image/jpeg",
-              0.76
-            );
 
-          $("#photoPreview").src =
-            photo;
+          const model =
+            await loadModel();
 
-          $("#addForm").style.display =
-            "block";
 
-          $("#itemName").value = "";
+          if (!model) {
+            analyzeButton.disabled = false;
+            return;
+          }
 
-          $("#itemNote").value = "";
+
+          showStatus(
+            `
+            <strong>Analyzing locally…</strong><br>
+            Your photo is being processed in this browser.
+            `
+          );
+
 
           /*
-            Reset the metadata controls.
-          */
+           * Run the actual model.
+           */
 
-          $("#itemWeather").value =
-            "mild";
+          const output =
+            await model(image);
 
-          $("#itemDressiness").value =
-            "casual";
 
-          $("#itemStyle").value =
-            "classic";
+          console.log(
+            "Segmentation output:",
+            output
+          );
 
-          $("#itemName").focus();
+
+          /*
+           * Display useful clothing labels.
+           */
+
+          displayResults(output);
+
+
+          showStatus(
+            `
+            ✓ Analysis complete.<br>
+            The photo was processed locally in your browser.
+            `,
+            "success"
+          );
+
+
+        } catch (error) {
+
+          console.error(
+            "Analysis error:",
+            error
+          );
+
+          showStatus(
+            `
+            <strong>Analysis failed.</strong><br><br>
+            ${escapeHTML(
+              getUsefulError(error)
+            )}
+            `,
+            "error"
+          );
 
         } finally {
 
-          URL.revokeObjectURL(
-            objectURL
-          );
+          analyzeButton.disabled = false;
+
         }
-      };
 
-      img.onerror = () => {
+      }
+    );
 
-        URL.revokeObjectURL(
-          objectURL
-        );
 
-        alert(
-          "I couldn't read that photo. Please try another one."
-        );
-      };
+    /*
+     * ============================================================
+     * DISPLAY RESULTS
+     * ============================================================
+     */
 
-      img.src =
-        objectURL;
-    };
+    function displayResults(output) {
 
-  /* -----------------------------------------------------
-     SAVE ITEM
-  ----------------------------------------------------- */
+      resultList.innerHTML = "";
 
-  $("#saveItem").onclick = () => {
 
-    const name =
-      $("#itemName")
-        .value
-        .trim();
+      if (!Array.isArray(output)) {
 
-    const type =
-      $("#itemType").value;
+        resultTitle.textContent =
+          "No usable result";
 
-    const image =
-      $("#photoPreview").src;
+        resultSubtitle.textContent =
+          "The model returned an unexpected result.";
 
-    const itemWeather =
-      $("#itemWeather").value;
+        results.classList.add("visible");
 
-    const dressiness =
-      $("#itemDressiness").value;
-
-    const itemStyle =
-      $("#itemStyle").value;
-
-    const note =
-      $("#itemNote")
-        .value
-        .trim();
-
-    if (!name) {
-
-      alert(
-        "Please give this item a name."
-      );
-
-      $("#itemName").focus();
-
-      return;
-    }
-
-    if (
-      !image ||
-      image ===
-        window.location.href
-    ) {
-
-      alert(
-        "Please add a clothing photo first."
-      );
-
-      return;
-    }
-
-    const item = {
-
-      id:
-        "photo-" +
-        Date.now(),
-
-      name,
-
-      type,
-
-      image,
-
-      weather:
-        itemWeather,
-
-      dressiness,
-
-      style:
-        itemStyle,
-
-      note:
-        note ||
-        "Added from phone"
-
-    };
-
-    let added = [];
-
-    try {
-
-      added =
-        JSON.parse(
-          localStorage.getItem(
-            "addedWardrobe"
-          ) || "[]"
-        );
-
-      if (!Array.isArray(added)) {
-        added = [];
+        return;
       }
 
-    } catch (e) {
 
-      added = [];
-    }
+      /*
+       * SegFormer clothes models return segmentation labels
+       * such as Background, Hair, Upper-clothes, Pants, etc.
+       *
+       * For this test we only show clothing-related regions.
+       */
 
-    added.push(item);
+      const clothingLabels = output
+        .filter(item => {
 
-    try {
+          const label =
+            String(
+              item.label || ""
+            ).toLowerCase();
 
-      localStorage.setItem(
-        "addedWardrobe",
-        JSON.stringify(added)
+          return (
+            label !== "background" &&
+            label !== "hair" &&
+            label !== "face" &&
+            label !== "skin"
+          );
+
+        });
+
+
+      if (clothingLabels.length === 0) {
+
+        resultTitle.textContent =
+          "No clothing region found";
+
+        resultSubtitle.textContent =
+          "The model did not return a useful clothing label for this photo.";
+
+        interpretationText.textContent =
+          "That does not necessarily mean the item is not clothing. It means this particular model did not identify a useful clothing region.";
+
+        results.classList.add("visible");
+
+        return;
+      }
+
+
+      /*
+       * Segmentation scores may be null for this model.
+       * Therefore we do not invent confidence numbers.
+       */
+
+      resultTitle.textContent =
+        "Clothing regions detected";
+
+      resultSubtitle.textContent =
+        "This is what the SegFormer B0 clothing model identified in the image.";
+
+
+      clothingLabels.forEach(
+        item => {
+
+          const row =
+            document.createElement("div");
+
+          row.className =
+            "result-item";
+
+
+          const label =
+            formatLabel(
+              item.label
+            );
+
+
+          const labelRow =
+            document.createElement("div");
+
+          labelRow.className =
+            "result-label";
+
+
+          const labelText =
+            document.createElement("span");
+
+          labelText.textContent =
+            label;
+
+
+          const scoreText =
+            document.createElement("span");
+
+          scoreText.className =
+            "result-score";
+
+
+          if (
+            typeof item.score === "number"
+          ) {
+
+            scoreText.textContent =
+              Math.round(
+                item.score * 100
+              ) + "%";
+
+          } else {
+
+            scoreText.textContent =
+              "";
+
+          }
+
+
+          labelRow.appendChild(
+            labelText
+          );
+
+          labelRow.appendChild(
+            scoreText
+          );
+
+
+          const bar =
+            document.createElement("div");
+
+          bar.className =
+            "bar";
+
+
+          const fill =
+            document.createElement("div");
+
+          fill.className =
+            "bar-fill";
+
+
+          /*
+           * If the model supplies a score,
+           * show it.
+           *
+           * Otherwise use a neutral visual marker.
+           */
+
+          if (
+            typeof item.score === "number"
+          ) {
+
+            fill.style.width =
+              Math.max(
+                3,
+                Math.min(
+                  100,
+                  item.score * 100
+                )
+              ) + "%";
+
+          } else {
+
+            fill.style.width =
+              "100%";
+
+          }
+
+
+          bar.appendChild(
+            fill
+          );
+
+
+          row.appendChild(
+            labelRow
+          );
+
+          row.appendChild(
+            bar
+          );
+
+
+          resultList.appendChild(
+            row
+          );
+
+        }
       );
 
-    } catch (e) {
 
-      alert(
-        "The photo is too large for the browser's local storage. Please try a smaller photo."
+      /*
+       * Give a simple interpretation for common labels.
+       */
+
+      const labels =
+        clothingLabels
+          .map(
+            x =>
+              String(
+                x.label || ""
+              ).toLowerCase()
+          );
+
+
+      if (
+        labels.some(
+          x =>
+            x.includes("pant") ||
+            x.includes("trouser")
+        )
+      ) {
+
+        interpretationText.textContent =
+          "The model sees a pants/trousers region. For your blue-jeans test, this is the result we particularly want to see.";
+
+      } else if (
+        labels.some(
+          x =>
+            x.includes("shirt") ||
+            x.includes("upper") ||
+            x.includes("top")
+        )
+      ) {
+
+        interpretationText.textContent =
+          "The model sees an upper-body clothing region. This is useful groundwork for eventually identifying tops, shirts and similar items.";
+
+      } else {
+
+        interpretationText.textContent =
+          "The model has identified one or more clothing regions. This test is about determining whether this small model is useful enough to become part of your wardrobe app.";
+
+      }
+
+
+      results.classList.add(
+        "visible"
       );
 
-      return;
     }
 
-    W.push(item);
-
-    renderCloset();
 
     /*
-      Clear form.
-    */
+     * ============================================================
+     * LABEL FORMATTING
+     * ============================================================
+     */
 
-    $("#itemName").value = "";
+    function formatLabel(label) {
 
-    $("#itemNote").value = "";
+      if (!label) {
+        return "Unknown clothing";
+      }
 
-    photoInput.value = "";
-
-    $("#addForm").style.display =
-      "none";
-
-    $("#photoPreview").src =
-      "";
-
-    /*
-      Confirmation.
-    */
-
-    $("#result").classList.add(
-      "show"
-    );
-
-    $("#result").innerHTML = `
-      <div class="section-title">
-        ADDED TO YOUR CLOSET
-      </div>
-
-      <h2>
-        ${escapeHTML(item.name)}
-      </h2>
-
-      <div class="look">
-        ${card(item)}
-      </div>
-
-      <p>
-        Your stylist now knows this is
-        <b>${escapeHTML(item.weather)}</b>,
-        <b>${escapeHTML(item.dressiness)}</b>,
-        and
-        <b>${escapeHTML(item.style)}</b>.
-      </p>
-
-      <p>
-        Your closet now has
-        <b>${W.length}</b>
-        ${W.length === 1 ? "piece" : "pieces"}.
-      </p>
-
-      <div class="tools">
-
-        <button id="addAnother">
-          📸 Add another
-        </button>
-
-        <button id="styleThis">
-          ✨ Style this
-        </button>
-
-      </div>
-    `;
-
-    $("#addAnother").onclick =
-      () => {
-
-        photoInput.removeAttribute(
-          "capture"
+      return String(label)
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(
+          /\b\w/g,
+          character =>
+            character.toUpperCase()
         );
-
-        photoInput.click();
-      };
-
-    $("#styleThis").onclick =
-      () => {
-
-        chosen = item;
-
-        showChoice(item);
-      };
-
-    $("#result").scrollIntoView({
-      behavior: "smooth",
-      block: "nearest"
-    });
-  };
-
-  /* -----------------------------------------------------
-     RESET UNAVAILABLE ITEMS
-  ----------------------------------------------------- */
-
-  $("#reset").onclick = () => {
-
-    unavailable = [];
-
-    localStorage.removeItem(
-      "unavailable"
-    );
-
-    renderCloset();
-
-    if (!W.length) {
-      showEmptyCloset();
     }
-  };
 
-  /* -----------------------------------------------------
-     FIRST RENDER
-  ----------------------------------------------------- */
 
-  renderCloset();
+    /*
+     * ============================================================
+     * ERROR HANDLING
+     * ============================================================
+     */
 
-  if (!W.length) {
+    function getUsefulError(error) {
 
-    console.log(
-      "INDEX wardrobe is ready for its first clothing photo."
+      if (!error) {
+        return "Unknown error.";
+      }
+
+      const message =
+        error.message ||
+        String(error);
+
+
+      if (
+        message.includes(
+          "Failed to fetch"
+        )
+      ) {
+
+        return (
+          "The browser could not download the AI model. " +
+          "Please check that you are online and reload the page."
+        );
+      }
+
+
+      if (
+        message.includes(
+          "WebAssembly"
+        )
+      ) {
+
+        return (
+          "The browser could not start the WebAssembly AI engine. " +
+          "Please try reloading the page."
+        );
+      }
+
+
+      return message;
+    }
+
+
+    /*
+     * ============================================================
+     * HTML ESCAPING
+     * ============================================================
+     */
+
+    function escapeHTML(value) {
+
+      return String(value)
+        .replace(
+          /&/g,
+          "&amp;"
+        )
+        .replace(
+          /</g,
+          "&lt;"
+        )
+        .replace(
+          />/g,
+          "&gt;"
+        )
+        .replace(
+          /"/g,
+          "&quot;"
+        )
+        .replace(
+          /'/g,
+          "&#039;"
+        );
+    }
+
+
+    /*
+     * ============================================================
+     * INITIAL MESSAGE
+     * ============================================================
+     */
+
+    showStatus(
+      `
+      Choose one of your clothing photos above.
+      Nothing will be analyzed until you press
+      “Analyze image”.
+      `
     );
-  }
-}
 
-/* -------------------------------------------------------
-   RUN
-------------------------------------------------------- */
+  </script>
 
-init();
+</body>
+</html>
