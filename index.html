@@ -29,7 +29,42 @@
   </div>
   <section class="card result" id="result"></section>
   <section class="card"><div class="section-title">MY CLOSET</div><div class="count"><span id="count">10</span> pieces</div><div class="grid" id="closet"></div></section>
-</div>
+<section class="card">
+  <div class="section-title">ADD TO CLOSET</div>
+
+  <button class="action" id="addItem">
+    📸 <b>Add a clothing photo</b>
+    <small>Take a photo or choose one from your phone</small>
+  </button>
+
+  <input id="photoInput"
+         type="file"
+         accept="image/*"
+         capture="environment"
+         hidden>
+
+  <div id="addForm" style="display:none;margin-top:12px">
+    <img id="photoPreview"
+         style="width:100%;max-height:280px;object-fit:contain;border-radius:15px;background:#eee">
+
+    <input id="itemName"
+           placeholder="What is it?"
+           style="width:100%;padding:12px;margin-top:10px;border:1px solid #ddd;border-radius:12px">
+
+    <select id="itemType"
+            style="width:100%;padding:12px;margin-top:8px;border:1px solid #ddd;border-radius:12px">
+      <option value="top">Top</option>
+      <option value="bottom">Bottom</option>
+      <option value="layer">Layer</option>
+      <option value="shoes">Shoes</option>
+      <option value="accessory">Accessory</option>
+    </select>
+
+    <button class="action" id="saveItem" style="margin-top:8px">
+      ✅ <b>Add to my closet</b>
+    </button>
+  </div>
+</section>is</div>
 
 <dialog id="picker">
   <div class="dialog-head"><div><div class="section-title">CHOOSE</div><h2>What do you want to wear?</h2></div><button class="close" onclick="picker.close()">×</button></div>
