@@ -2,270 +2,268 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0,
-               maximum-scale=1.0, user-scalable=no">
 
-<title>Clothing AI Test</title>
+<meta
+  name="viewport"
+  content="width=device-width,
+           initial-scale=1,
+           maximum-scale=1,
+           user-scalable=no"
+>
+
+<title>AI Test - Mobile Chrome</title>
 
 <style>
-    * {
-        box-sizing: border-box;
-    }
 
-    body {
-        margin: 0;
-        padding: 24px 16px 60px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-                     Roboto, Helvetica, Arial, sans-serif;
-        background: #f7f7f5;
-        color: #111;
-    }
+* {
+  box-sizing: border-box;
+}
 
-    .page {
-        max-width: 720px;
-        margin: 0 auto;
-    }
+body {
+  margin: 0;
+  padding: 22px 16px 50px;
+  background: #f7f6f3;
+  color: #151515;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+}
 
-    h1 {
-        font-size: 34px;
-        margin: 0 0 8px;
-        letter-spacing: -1px;
-    }
+.container {
+  max-width: 680px;
+  margin: auto;
+}
 
-    .subtitle {
-        color: #666;
-        font-size: 17px;
-        line-height: 1.45;
-        margin-bottom: 24px;
-    }
+h1 {
+  margin: 0 0 8px;
+  font-family: Georgia, serif;
+  font-size: 36px;
+  font-weight: 400;
+}
 
-    .card {
-        background: white;
-        border-radius: 24px;
-        padding: 22px;
-        margin-bottom: 18px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-    }
+.subtitle {
+  color: #666;
+  font-size: 17px;
+  line-height: 1.45;
+  margin-bottom: 24px;
+}
 
-    .label {
-        display: block;
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 2px;
-        color: #777;
-        margin-bottom: 10px;
-    }
+.card {
+  background: white;
+  border-radius: 24px;
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
+}
 
-    input[type="file"] {
-        width: 100%;
-        font-size: 16px;
-        padding: 14px;
-        border: 1px solid #ddd;
-        border-radius: 14px;
-        background: #fafafa;
-    }
+.label {
+  display: block;
+  margin-bottom: 10px;
+  color: #777;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
 
-    #preview {
-        display: none;
-        width: 100%;
-        max-height: 560px;
-        object-fit: contain;
-        border-radius: 20px;
-        margin-top: 18px;
-        background: #eee;
-    }
+input[type="file"] {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ddd;
+  border-radius: 14px;
+  background: #fafafa;
+  font-size: 16px;
+}
 
-    button {
-        width: 100%;
-        border: 0;
-        border-radius: 18px;
-        padding: 18px;
-        font-size: 20px;
-        font-weight: 700;
-        background: #111;
-        color: white;
-        margin-top: 18px;
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-    }
+#preview {
+  display: none;
+  width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  margin-top: 18px;
+  border-radius: 18px;
+  background: #eee;
+}
 
-    button:disabled {
-        background: #aaa;
-        cursor: default;
-    }
+button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 17px;
+  border: 0;
+  border-radius: 17px;
+  background: #151515;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+}
 
-    .status {
-        margin-top: 18px;
-        padding: 16px 18px;
-        border-radius: 16px;
-        font-size: 16px;
-        line-height: 1.45;
-        background: #f0f0f0;
-    }
+button:disabled {
+  background: #aaa;
+}
 
-    .status.success {
-        background: #e9f7ed;
-        color: #216b36;
-    }
+.status {
+  margin-top: 18px;
+  padding: 15px;
+  border-radius: 15px;
+  background: #f0f0ee;
+  line-height: 1.5;
+}
 
-    .status.warning {
-        background: #fff5d9;
-        color: #775800;
-    }
+.success {
+  background: #e9f7ed;
+  color: #216b36;
+}
 
-    .status.error {
-        background: #fde8e8;
-        color: #8b2222;
-    }
+.error {
+  background: #fde9e9;
+  color: #8b2222;
+}
 
-    .result {
-        display: none;
-    }
+.warning {
+  background: #fff5d9;
+  color: #735500;
+}
 
-    .result h2 {
-        margin: 0 0 20px;
-        font-size: 28px;
-        letter-spacing: -0.5px;
-    }
+#results {
+  display: none;
+}
 
-    .result-item {
-        padding: 16px 0;
-        border-bottom: 1px solid #e5e5e5;
-    }
+.result {
+  padding: 15px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
 
-    .result-item:last-child {
-        border-bottom: 0;
-    }
+.result:last-child {
+  border-bottom: 0;
+}
 
-    .result-name {
-        font-size: 20px;
-        font-weight: 700;
-    }
+.result-name {
+  font-size: 18px;
+  font-weight: 700;
+}
 
-    .result-score {
-        color: #666;
-        margin-top: 4px;
-    }
+.result-score {
+  margin-top: 4px;
+  color: #666;
+}
 
-    .bar {
-        height: 8px;
-        background: #e5e5e5;
-        border-radius: 10px;
-        overflow: hidden;
-        margin-top: 10px;
-    }
+.bar {
+  height: 8px;
+  margin-top: 9px;
+  border-radius: 10px;
+  background: #e5e5e5;
+  overflow: hidden;
+}
 
-    .bar-fill {
-        height: 100%;
-        background: #111;
-        border-radius: 10px;
-    }
+.fill {
+  height: 100%;
+  background: #151515;
+}
 
-    .small {
-        color: #777;
-        font-size: 14px;
-        line-height: 1.5;
-    }
+.small {
+  color: #777;
+  font-size: 14px;
+  line-height: 1.5;
+}
 
-    .privacy {
-        font-size: 14px;
-        color: #555;
-        line-height: 1.5;
-    }
-
-    .hidden {
-        display: none !important;
-    }
-
-    .spinner {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 2px solid rgba(0,0,0,0.2);
-        border-top-color: #111;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        vertical-align: -3px;
-        margin-right: 8px;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
 </style>
 </head>
 
 <body>
 
-<div class="page">
+<div class="container">
 
-    <h1>Clothing AI Test</h1>
+  <h1>Small AI Test</h1>
 
-    <div class="subtitle">
-        A small, local browser test using SegFormer B0 Clothes.
+  <div class="subtitle">
+    A deliberately tiny browser AI test for mobile Chrome.
+    Your photo stays on your phone.
+  </div>
+
+
+  <div class="card">
+
+    <span class="label">
+      1 · CHOOSE A PHOTO
+    </span>
+
+    <!--
+      IMPORTANT:
+      No capture attribute.
+
+      Chrome should therefore allow:
+      • Photos / Library
+      • Camera
+      • Files
+    -->
+
+    <input
+      id="photoInput"
+      type="file"
+      accept="image/*"
+    >
+
+    <img
+      id="preview"
+      alt="Selected photo"
+    >
+
+    <button
+      id="runButton"
+      disabled
+    >
+      Run small AI
+    </button>
+
+    <div
+      id="status"
+      class="status"
+    >
+      Choose a photo to begin.
     </div>
 
-    <div class="card">
+  </div>
 
-        <span class="label">CHOOSE A PHOTO</span>
 
-        <!--
-            IMPORTANT:
-            No "capture" attribute here.
-            This allows iPhone users to choose from
-            their existing Photo Library OR take a new photo.
-        -->
-        <input
-            id="photoInput"
-            type="file"
-            accept="image/*"
-        >
+  <div
+    id="resultsCard"
+    class="card"
+    style="display:none;"
+  >
 
-        <img id="preview" alt="Selected clothing photo">
+    <span class="label">
+      2 · AI RESULT
+    </span>
 
-        <button id="analyzeButton" disabled>
-            Analyze image
-        </button>
+    <div id="results"></div>
 
-        <div id="status" class="status">
-            Choose a clothing photo to begin.
-        </div>
+  </div>
 
-    </div>
 
-    <div id="resultCard" class="card result">
+  <div class="card">
 
-        <h2>AI result</h2>
+    <span class="label">
+      WHY ARE WE TESTING THIS?
+    </span>
 
-        <div id="results"></div>
+    <div class="small">
 
-    </div>
+      This is intentionally NOT the final wardrobe AI.
 
-    <div class="card">
+      First we want to establish that your phone's
+      Chrome browser can reliably run a very small
+      computer-vision model locally.
 
-        <span class="label">ABOUT THIS TEST</span>
-
-        <div class="privacy">
-            Your photograph is processed inside this browser.
-            It is not uploaded to an AI API.
-            The AI model files themselves are downloaded from
-            Hugging Face when needed.
-        </div>
-
-        <br>
-
-        <div class="small">
-            This model is designed primarily for clothing
-            segmentation. It can recognise clothing regions
-            such as trousers, shirts, dresses and jackets,
-            but it is not expected to understand every fashion
-            detail or reliably identify a specific brand.
-        </div>
+      If this works, we can then move to a clothing-specific
+      model or build a lightweight clothing-recognition
+      layer on top of this foundation.
 
     </div>
+
+  </div>
 
 </div>
 
@@ -274,16 +272,51 @@
 
 /*
 ============================================================
- CLOTHING AI TEST
- SegFormer B0 Clothes
- Transformers.js
+ SMALL MOBILE AI TEST
+============================================================
+
+Target:
+    Chrome on a phone
+
+Goal:
+    Prove that a small local vision model can run reliably.
+
+This is NOT yet the wardrobe recogniser.
+
 ============================================================
 */
 
+
 import {
-    pipeline,
-    RawImage
+  pipeline
 } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
+
+
+/*
+============================================================
+ MODEL
+============================================================
+
+MobileNet is deliberately chosen because it is a much
+smaller and simpler vision model than SegFormer.
+
+The model is an ImageNet classifier.
+
+Therefore it will NOT necessarily say:
+
+    "blue jeans"
+
+Instead it may produce generic visual classes.
+
+That's okay.
+
+The only thing we are testing at this stage is whether
+the browser can successfully run the model.
+============================================================
+*/
+
+const MODEL =
+  "Xenova/mobilenetv4_conv_small.e2400_r224_in1k";
 
 
 /*
@@ -292,389 +325,596 @@ import {
 ============================================================
 */
 
-const photoInput = document.getElementById("photoInput");
-const preview = document.getElementById("preview");
-const analyzeButton = document.getElementById("analyzeButton");
-const statusBox = document.getElementById("status");
-const resultCard = document.getElementById("resultCard");
-const resultsBox = document.getElementById("results");
+const photoInput =
+  document.getElementById("photoInput");
+
+const preview =
+  document.getElementById("preview");
+
+const runButton =
+  document.getElementById("runButton");
+
+const statusBox =
+  document.getElementById("status");
+
+const resultsCard =
+  document.getElementById("resultsCard");
+
+const resultsBox =
+  document.getElementById("results");
 
 
 /*
 ============================================================
- GLOBAL STATE
+ STATE
 ============================================================
 */
 
 let selectedFile = null;
-let selectedObjectUrl = null;
-let previewObjectUrl = null;
 
-let segmenter = null;
+let previewURL = null;
+
+let classifier = null;
+
 let modelLoading = false;
 
 
 /*
 ============================================================
- MODEL
-============================================================
-
-This is the small SegFormer B0 clothing model.
-
-We explicitly request q8 quantization.
-
-The model repository contains quantized ONNX
-weights intended for Transformers.js.
+ STATUS
 ============================================================
 */
 
-const MODEL_ID = "Xenova/segformer_b0_clothes";
+function setStatus(
+  message,
+  type = ""
+) {
 
+  statusBox.className =
+    "status " + type;
 
-/*
-============================================================
- STATUS HELPER
-============================================================
-*/
-
-function setStatus(message, type = "") {
-
-    statusBox.className = "status";
-
-    if (type) {
-        statusBox.classList.add(type);
-    }
-
-    statusBox.innerHTML = message;
+  statusBox.innerHTML =
+    message;
 }
 
 
 /*
 ============================================================
- ESCAPE HTML
+ HTML ESCAPING
 ============================================================
 */
 
-function escapeHtml(value) {
+function escapeHTML(value) {
 
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
 }
 
 
 /*
 ============================================================
- FILE SELECTION
+ PHOTO SELECTION
 ============================================================
 */
 
-photoInput.addEventListener("change", function () {
+photoInput.addEventListener(
+  "change",
+  () => {
 
-    const file = photoInput.files && photoInput.files[0];
+    const file =
+      photoInput.files?.[0];
+
 
     if (!file) {
-        selectedFile = null;
-        analyzeButton.disabled = true;
-        return;
+      return;
     }
+
 
     if (!file.type.startsWith("image/")) {
 
-        selectedFile = null;
-        analyzeButton.disabled = true;
+      setStatus(
+        "Please choose an image.",
+        "error"
+      );
 
-        setStatus(
-            "Please choose an image file.",
-            "error"
-        );
-
-        return;
+      return;
     }
 
-    selectedFile = file;
+
+    selectedFile =
+      file;
+
 
     /*
-        Remove old preview URL.
+      Display the photo.
+
+      This is only a local browser URL.
     */
 
-    if (previewObjectUrl) {
-        URL.revokeObjectURL(previewObjectUrl);
+    if (previewURL) {
+
+      URL.revokeObjectURL(
+        previewURL
+      );
+
     }
 
-    previewObjectUrl = URL.createObjectURL(file);
 
-    preview.src = previewObjectUrl;
-    preview.style.display = "block";
+    previewURL =
+      URL.createObjectURL(
+        file
+      );
 
-    analyzeButton.disabled = false;
 
-    resultCard.style.display = "none";
-    resultsBox.innerHTML = "";
+    preview.src =
+      previewURL;
+
+    preview.style.display =
+      "block";
+
+
+    runButton.disabled =
+      false;
+
+
+    resultsCard.style.display =
+      "none";
+
+    resultsBox.innerHTML =
+      "";
+
 
     setStatus(
-        "Photo ready. Tap “Analyze image”.",
-        "success"
+      "Photo selected. Tap <b>Run small AI</b>.",
+      "success"
     );
 
-});
+  }
+);
 
 
 /*
 ============================================================
- RESIZE IMAGE
+ RESIZE PHOTO
 ============================================================
 
-iPhones can produce very large photographs.
+We deliberately make the image small before sending it
+to the model.
 
-We deliberately shrink the image before giving it
-to the AI.
+Maximum dimension: 384px.
 
-This is one of the important protections against
-the browser tab running out of memory.
+This is intentionally conservative for mobile Chrome.
 ============================================================
 */
 
-async function createSmallImage(file) {
+async function makeSmallImage(
+  file
+) {
 
-    const sourceUrl = URL.createObjectURL(file);
-
-    try {
-
-        const img = new Image();
-
-        await new Promise((resolve, reject) => {
-
-            img.onload = resolve;
-
-            img.onerror = () => {
-                reject(new Error("The selected image could not be read."));
-            };
-
-            img.src = sourceUrl;
-
-        });
+  const url =
+    URL.createObjectURL(file);
 
 
-        /*
-            Maximum dimension.
+  try {
 
-            640px is deliberately conservative for an
-            iPhone browser AI test.
-        */
-
-        const MAX_SIZE = 640;
-
-        let width = img.naturalWidth;
-        let height = img.naturalHeight;
-
-        const largest = Math.max(width, height);
-
-        if (largest > MAX_SIZE) {
-
-            const scale = MAX_SIZE / largest;
-
-            width = Math.round(width * scale);
-            height = Math.round(height * scale);
-
-        }
+    const image =
+      new Image();
 
 
-        /*
-            Create a small canvas.
-        */
+    await new Promise(
+      (resolve, reject) => {
 
-        const canvas = document.createElement("canvas");
+        image.onload =
+          resolve;
 
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d", {
-            alpha: false
-        });
-
-        if (!ctx) {
-            throw new Error("Could not create image canvas.");
-        }
-
-
-        /*
-            Draw the resized photograph.
-        */
-
-        ctx.drawImage(
-            img,
-            0,
-            0,
-            width,
-            height
-        );
-
-
-        /*
-            Convert canvas to JPEG.
-
-            This produces a much smaller image than the
-            original iPhone HEIC/JPEG.
-        */
-
-        const blob = await new Promise((resolve, reject) => {
-
-            canvas.toBlob(
-                result => {
-
-                    if (result) {
-                        resolve(result);
-                    } else {
-                        reject(
-                            new Error(
-                                "Could not prepare the resized image."
-                            )
-                        );
-                    }
-
-                },
-                "image/jpeg",
-                0.82
+        image.onerror =
+          () =>
+            reject(
+              new Error(
+                "Chrome could not read the photo."
+              )
             );
 
-        });
+        image.src =
+          url;
+
+      }
+    );
 
 
-        /*
-            IMPORTANT:
+    const MAX =
+      384;
 
-            Return a URL string, not a Blob/object.
 
-            This avoids the previous:
-            "Unsupported input type: object"
-            problem.
-        */
+    let width =
+      image.naturalWidth;
 
-        const resizedUrl = URL.createObjectURL(blob);
+    let height =
+      image.naturalHeight;
 
-        return {
-            url: resizedUrl,
-            width,
-            height
-        };
 
-    } finally {
+    const largest =
+      Math.max(
+        width,
+        height
+      );
 
-        URL.revokeObjectURL(sourceUrl);
+
+    if (largest > MAX) {
+
+      const scale =
+        MAX / largest;
+
+      width =
+        Math.round(
+          width * scale
+        );
+
+      height =
+        Math.round(
+          height * scale
+        );
 
     }
+
+
+    const canvas =
+      document.createElement(
+        "canvas"
+      );
+
+
+    canvas.width =
+      width;
+
+    canvas.height =
+      height;
+
+
+    const context =
+      canvas.getContext(
+        "2d",
+        {
+          alpha: false
+        }
+      );
+
+
+    context.drawImage(
+      image,
+      0,
+      0,
+      width,
+      height
+    );
+
+
+    /*
+      JPEG is deliberately used here because it keeps
+      the temporary image small.
+    */
+
+    const blob =
+      await new Promise(
+        (resolve, reject) => {
+
+          canvas.toBlob(
+            result => {
+
+              if (result) {
+
+                resolve(
+                  result
+                );
+
+              } else {
+
+                reject(
+                  new Error(
+                    "Could not resize the photo."
+                  )
+                );
+
+              }
+
+            },
+            "image/jpeg",
+            0.75
+          );
+
+        }
+      );
+
+
+    const smallURL =
+      URL.createObjectURL(
+        blob
+      );
+
+
+    return {
+      url: smallURL,
+      width,
+      height
+    };
+
+  }
+
+  finally {
+
+    URL.revokeObjectURL(
+      url
+    );
+
+  }
 
 }
 
 
 /*
 ============================================================
- LOAD AI MODEL
+ LOAD MODEL
 ============================================================
 */
 
 async function loadModel() {
 
-    if (segmenter) {
-        return segmenter;
+  if (classifier) {
+
+    return classifier;
+
+  }
+
+
+  if (modelLoading) {
+
+    while (
+      modelLoading
+    ) {
+
+      await new Promise(
+        resolve =>
+          setTimeout(
+            resolve,
+            200
+          )
+      );
+
     }
 
-    if (modelLoading) {
 
-        /*
-            Wait until another call finishes loading.
-        */
+    return classifier;
 
-        while (modelLoading) {
+  }
 
-            await new Promise(resolve => {
-                setTimeout(resolve, 200);
-            });
 
+  modelLoading =
+    true;
+
+
+  try {
+
+    setStatus(
+      `
+      <b>Loading small AI…</b><br>
+      <span class="small">
+        This is the first and only expensive part
+        of the test. Please give Chrome a moment.
+      </span>
+      `,
+      "warning"
+    );
+
+
+    /*
+      IMPORTANT:
+
+      We explicitly use a quantized model.
+
+      This keeps the browser workload as small as
+      possible.
+    */
+
+    classifier =
+      await pipeline(
+        "image-classification",
+        MODEL,
+        {
+          dtype: "q8",
+          device: "wasm"
         }
-
-        if (segmenter) {
-            return segmenter;
-        }
-    }
+      );
 
 
-    modelLoading = true;
+    return classifier;
 
-    try {
+  }
 
-        setStatus(
-            '<span class="spinner"></span>' +
-            'Loading the small clothing AI…<br>' +
-            '<span class="small">' +
-            'The first run can take a little while because the model must be downloaded.' +
-            '</span>',
-            "warning"
-        );
+  finally {
 
+    modelLoading =
+      false;
 
-        /*
-            Transformers.js v3.
-
-            dtype q8 asks for the quantized model where
-            available.
-
-            device wasm keeps this as a CPU/browser test,
-            avoiding experimental GPU behaviour.
-        */
-
-        segmenter = await pipeline(
-            "image-segmentation",
-            MODEL_ID,
-            {
-                dtype: "q8",
-                device: "wasm"
-            }
-        );
-
-
-        return segmenter;
-
-    } finally {
-
-        modelLoading = false;
-
-    }
+  }
 
 }
 
 
 /*
 ============================================================
- HUMAN-FRIENDLY CLOTHING NAMES
+ RUN AI
 ============================================================
 */
 
-const clothingNames = {
+runButton.addEventListener(
+  "click",
+  async () => {
 
-    "Background": "Background",
-    "Hat": "Hat",
-    "Hair": "Hair",
-    "Sunglasses": "Sunglasses",
-    "Upper-clothes": "Top / Upper clothing",
-    "Skirt": "Skirt",
-    "Pants": "Trousers / Pants",
-    "Dress": "Dress",
-    "Belt": "Belt",
-    "Left-shoe": "Left shoe",
-    "Right-shoe": "Right shoe",
-    "Face": "Face",
-    "Left-leg": "Left leg",
-    "Right-leg": "Right leg",
-    "Left-arm": "Left arm",
-    "Right-arm": "Right arm",
-    "Bag": "Bag",
-    "Scarf": "Scarf"
-};
+    if (
+      !selectedFile ||
+      modelLoading
+    ) {
+
+      return;
+
+    }
+
+
+    runButton.disabled =
+      true;
+
+    resultsCard.style.display =
+      "none";
+
+
+    let smallImage =
+      null;
+
+
+    try {
+
+      /*
+        STEP 1
+        Make a tiny version of the photo.
+      */
+
+      setStatus(
+        "Preparing the photo…"
+      );
+
+
+      smallImage =
+        await makeSmallImage(
+          selectedFile
+        );
+
+
+      /*
+        STEP 2
+        Load the tiny classifier.
+      */
+
+      const ai =
+        await loadModel();
+
+
+      /*
+        STEP 3
+        Run classification.
+
+        Notice that we pass a STRING URL.
+
+        This avoids the File/object problem we
+        encountered previously.
+      */
+
+      setStatus(
+        `
+        <b>AI is running locally…</b><br>
+        <span class="small">
+          Your photo is being processed by Chrome.
+        </span>
+        `,
+        "warning"
+      );
+
+
+      const output =
+        await ai(
+          smallImage.url,
+          {
+            topk: 5
+          }
+        );
+
+
+      /*
+        STEP 4
+        Show results.
+      */
+
+      showResults(
+        output
+      );
+
+
+      setStatus(
+        `
+        <b>✓ It worked!</b><br>
+        <span class="small">
+          Chrome successfully ran a local AI model
+          on your phone.
+        </span>
+        `,
+        "success"
+      );
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "AI TEST ERROR:",
+        error
+      );
+
+
+      const message =
+        error?.message ||
+        String(error);
+
+
+      setStatus(
+        `
+        <b>The AI test failed.</b><br><br>
+
+        <span class="small">
+        ${escapeHTML(message)}
+        </span>
+
+        <br><br>
+
+        <span class="small">
+        If Chrome itself disappears instead of showing
+        this message, tell me exactly that — it means
+        the browser/device is killing the AI process,
+        which is useful information for our next step.
+        </span>
+        `,
+        "error"
+      );
+
+    }
+
+    finally {
+
+      /*
+        Release the temporary resized image.
+      */
+
+      if (
+        smallImage?.url
+      ) {
+
+        URL.revokeObjectURL(
+          smallImage.url
+        );
+
+      }
+
+
+      runButton.disabled =
+        false;
+
+    }
+
+  }
+);
 
 
 /*
@@ -683,302 +923,111 @@ const clothingNames = {
 ============================================================
 */
 
-function displayResults(output) {
+function showResults(
+  output
+) {
 
-    resultsBox.innerHTML = "";
+  resultsBox.innerHTML =
+    "";
 
-    if (!output || !Array.isArray(output) || output.length === 0) {
 
-        resultsBox.innerHTML = `
-            <div class="small">
-                The model completed, but did not return any
-                clothing regions.
-            </div>
+  if (
+    !Array.isArray(output) ||
+    output.length === 0
+  ) {
+
+    resultsBox.innerHTML =
+      `
+      <div class="small">
+        The AI ran successfully but returned no
+        classification.
+      </div>
+      `;
+
+    resultsCard.style.display =
+      "block";
+
+    return;
+
+  }
+
+
+  output.forEach(
+    item => {
+
+      const label =
+        item.label ||
+        "Unknown";
+
+
+      const score =
+        Number(
+          item.score
+        );
+
+
+      const percentage =
+        Number.isFinite(score)
+          ? Math.round(
+              score * 100
+            )
+          : 0;
+
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+
+      row.className =
+        "result";
+
+
+      row.innerHTML =
+        `
+        <div class="result-name">
+          ${escapeHTML(label)}
+        </div>
+
+        <div class="result-score">
+          ${percentage}%
+        </div>
+
+        <div class="bar">
+
+          <div
+            class="fill"
+            style="width:${percentage}%"
+          ></div>
+
+        </div>
         `;
 
-        resultCard.style.display = "block";
 
-        return;
+      resultsBox.appendChild(
+        row
+      );
+
     }
+  );
 
 
-    /*
-        Background is not useful for our wardrobe result,
-        so hide it.
-    */
-
-    const useful = output
-        .filter(item => item && item.label)
-        .filter(item => item.label !== "Background");
-
-
-    if (useful.length === 0) {
-
-        resultsBox.innerHTML = `
-            <div class="small">
-                No clothing regions were detected.
-            </div>
-        `;
-
-        resultCard.style.display = "block";
-
-        return;
-    }
-
-
-    useful.forEach(item => {
-
-        const label = clothingNames[item.label] || item.label;
-
-        let score = Number(item.score);
-
-        /*
-            Some segmentation outputs may not provide a
-            meaningful score. In that case we don't invent one.
-        */
-
-        if (!Number.isFinite(score)) {
-            score = null;
-        }
-
-        const scoreText =
-            score === null
-                ? "Detected"
-                : `${Math.round(score * 100)}%`;
-
-        const percentage =
-            score === null
-                ? 70
-                : Math.max(
-                    4,
-                    Math.min(100, score * 100)
-                );
-
-
-        const row = document.createElement("div");
-
-        row.className = "result-item";
-
-        row.innerHTML = `
-            <div class="result-name">
-                ${escapeHtml(label)}
-            </div>
-
-            <div class="result-score">
-                ${escapeHtml(scoreText)}
-            </div>
-
-            <div class="bar">
-                <div
-                    class="bar-fill"
-                    style="width:${percentage}%"
-                ></div>
-            </div>
-        `;
-
-        resultsBox.appendChild(row);
-
-    });
-
-
-    resultCard.style.display = "block";
+  resultsCard.style.display =
+    "block";
 
 }
 
 
 /*
 ============================================================
- ANALYZE
-============================================================
-*/
-
-analyzeButton.addEventListener("click", async function () {
-
-    if (!selectedFile) {
-
-        setStatus(
-            "Please choose a photo first.",
-            "warning"
-        );
-
-        return;
-    }
-
-
-    /*
-        Prevent double taps.
-    */
-
-    analyzeButton.disabled = true;
-
-
-    let resized = null;
-
-
-    try {
-
-        resultCard.style.display = "none";
-        resultsBox.innerHTML = "";
-
-
-        /*
-            STEP 1
-            Resize photo before doing anything expensive.
-        */
-
-        setStatus(
-            '<span class="spinner"></span>' +
-            'Preparing your photo…'
-        );
-
-        resized = await createSmallImage(selectedFile);
-
-
-        /*
-            STEP 2
-            Load the AI.
-        */
-
-        const model = await loadModel();
-
-
-        /*
-            STEP 3
-            Run segmentation.
-
-            IMPORTANT:
-            We give Transformers.js a URL string.
-
-            Not:
-                File
-                Blob
-                object
-
-            This specifically avoids the previous
-            "Unsupported input type: object" problem.
-        */
-
-        setStatus(
-            '<span class="spinner"></span>' +
-            'Analyzing clothing locally…'
-        );
-
-
-        const output = await model(resized.url);
-
-
-        /*
-            STEP 4
-            Show results.
-        */
-
-        displayResults(output);
-
-
-        setStatus(
-            '✓ Analysis complete.<br>' +
-            '<span class="small">' +
-            `The photo was resized to ${resized.width} × ${resized.height}px ` +
-            'and processed locally in your browser.' +
-            '</span>',
-            "success"
-        );
-
-
-    } catch (error) {
-
-        console.error("Clothing AI error:", error);
-
-
-        /*
-            Do NOT crash the page.
-
-            Show the actual error instead.
-        */
-
-        let message =
-            error && error.message
-                ? error.message
-                : String(error);
-
-
-        /*
-            Make common browser/model errors easier to understand.
-        */
-
-        if (
-            message.toLowerCase().includes("memory") ||
-            message.toLowerCase().includes("allocation") ||
-            message.toLowerCase().includes("out of memory")
-        ) {
-
-            message =
-                "The browser ran out of memory while running the AI. " +
-                "This iPhone may not have enough memory for this model.";
-
-        }
-
-
-        setStatus(
-            '<strong>Analysis failed.</strong><br><br>' +
-            '<span class="small">' +
-            escapeHtml(message) +
-            '</span>',
-            "error"
-        );
-
-
-    } finally {
-
-        /*
-            Release the temporary resized image URL.
-        */
-
-        if (resized && resized.url) {
-            URL.revokeObjectURL(resized.url);
-        }
-
-
-        analyzeButton.disabled = !selectedFile;
-
-    }
-
-});
-
-
-/*
-============================================================
- INITIAL MESSAGE
+ INITIAL STATE
 ============================================================
 */
 
 setStatus(
-    "Choose a clothing photo to begin."
+  "Choose a photo to begin."
 );
-
-
-/*
-============================================================
- EXTRA SAFETY
-============================================================
-
-If the page becomes hidden while loading, we don't try
-to perform any additional work.
-
-============================================================
-*/
-
-document.addEventListener("visibilitychange", () => {
-
-    if (document.hidden && modelLoading) {
-
-        console.log(
-            "Page temporarily hidden while model is loading."
-        );
-
-    }
-
-});
 
 </script>
 
