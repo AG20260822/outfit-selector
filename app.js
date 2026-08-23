@@ -1,89 +1,84 @@
-let W = [
-  {
-    id: "necklace",
-    name: "Beaded necklace",
-    type: "accessory",
-    note: "Like it a lot",
-    image: ""
-  },
-  {
-    id: "camisole",
-    name: "Light camisole",
-    type: "top",
-    note: "Very comfy · best layered",
-    image: ""
-  },
-  {
-    id: "vneck",
-    name: "White V-neck T-shirt",
-    type: "top",
-    note: "Favorite neckline",
-    image: ""
-  },
-  {
-    id: "stripe",
-    name: "White + black striped long-sleeve",
-    type: "top",
-    note: "Casual",
-    image: ""
-  },
-  {
-    id: "jeans",
-    name: "Blue jeans",
-    type: "bottom",
-    note: "Wear very often",
-    image: ""
-  },
-  {
-    id: "pinstripe",
-    name: "White pinstripe shirt",
-    type: "top",
-    note: "Comfy · wear often",
-    image: ""
-  },
-  {
-    id: "blazer",
-    name: "Powder/light-blue blazer",
-    type: "layer",
-    note: "Pretty · less comfy",
-    image: ""
-  },
-  {
-    id: "trousers",
-    name: "Taupe/brown wide-leg trousers",
-    type: "bottom",
-    note: "New · needs styling",
-    image: ""
-  },
-  {
-    id: "sneakers",
-    name: "White sneakers",
-    type: "shoes",
-    note: "Main pair",
-    image: ""
-  },
-  {
-    id: "loafers",
-    name: "Black loafers",
-    type: "shoes",
-    note: "Rarely worn · styling challenge",
-    image: ""
-  }
-];
+/*
+  INDEX · OUTFIT SELECTOR
 
-let unavailable = JSON.parse(
-  localStorage.getItem("unavailable") || "[]"
-);
+  This version starts with an empty closet.
+
+  Your clothing photos are stored locally in the browser,
+  not in GitHub.
+
+  The initial 10 placeholder items have intentionally been removed.
+*/
+
+const LIBRARY_VERSION = "fresh-library-1";
+
+let W = [];
+let unavailable = [];
+let feedback = [];
+
+const $ = s => document.querySelector(s);
+
+/* -------------------------------------------------------
+   START WITH A FRESH CLOTHING LIBRARY
+------------------------------------------------------- */
+
+try {
+  const savedVersion =
+    localStorage.getItem("libraryVersion");
+
+  if (savedVersion !== LIBRARY_VERSION) {
+    /*
+      We are intentionally starting from scratch.
+
+      This removes any clothing items that may have been
+      added during the previous testing version.
+    */
+    localStorage.removeItem("addedWardrobe");
+
+    localStorage.setItem(
+      "libraryVersion",
+      LIBRARY_VERSION
+    );
+
+    localStorage.removeItem("unavailable");
+  }
+} catch (e) {
+  console.warn(
+    "Could not initialize library version.",
+    e
+  );
+}
+
+try {
+  unavailable = JSON.parse(
+    localStorage.getItem("unavailable") || "[]"
+  );
+} catch (e) {
+  unavailable = [];
+}
+
+try {
+  feedback = JSON.parse(
+    localStorage.getItem("outfitFeedback") || "[]"
+  );
+} catch (e) {
+  feedback = [];
+}
 
 try {
   const added = JSON.parse(
     localStorage.getItem("addedWardrobe") || "[]"
   );
 
-  W = [...W, ...added];
+  if (Array.isArray(added)) {
+    W = added;
+  }
 } catch (e) {
-  localStorage.removeItem("addedWardrobe");
+  W = [];
 }
+
+/* -------------------------------------------------------
+   INITIALIZE
+------------------------------------------------------- */
 
 function init() {
   let mood = "any";
@@ -92,18 +87,58 @@ function init() {
   let chosen = null;
   let current = [];
 
-  const $ = s => document.querySelector(s);
+  const picker = $("#picker");
+
+  /*
+    Make the dialog available to the existing inline
+    close button in index.html.
+  */
+  window.picker = picker;
+
+  /*
+    IMPORTANT:
+    Remove the camera-only instruction from the file input.
+
+    This means iPhone can offer:
+    - Take Photo
+    - Choose Existing Photo
+    - potentially other photo sources
+  */
+  const photoInput = $("#photoInput");
+
+  if (photoInput) {
+    photoInput.removeAttribute("capture");
+  }
+
+  /* -----------------------------------------------------
+     BASIC HELPERS
+  ----------------------------------------------------- */
 
   const available = () =>
-    W.filter(x => !unavailable.includes(x.id));
+    W.filter(
+      x => !unavailable.includes(x.id)
+    );
 
-  let feedback = JSON.parse(
-    localStorage.getItem("outfitFeedback") || "[]"
-  );
+  function updateCount() {
+    const count = $("#count");
 
-  function outfitKey(outfit) {
-    return outfit.map(x => x.id).sort().join("|");
+    if (count) {
+      count.textContent = W.length;
+    }
   }
+
+  function escapeHTML(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  /* -----------------------------------------------------
+     FEEDBACK
+  ----------------------------------------------------- */
 
   function recordFeedback(kind, outfit) {
     feedback.push({
@@ -128,39 +163,98 @@ function init() {
 
     feedback.forEach(f => {
       if (f.outfit.includes(x.id)) {
-        if (f.kind === "yes") yes++;
-        else if (f.kind === "no") no++;
+        if (f.kind === "yes") {
+          yes++;
+        }
+
+        if (f.kind === "no") {
+          no++;
+        }
       }
     });
 
     return yes * 2 - no * 3;
   }
 
+  /* -----------------------------------------------------
+     ITEM CARD
+  ----------------------------------------------------- */
+
   function card(x) {
     const image = x.image
-      ? `<img src="${x.image}" alt="${x.name}">`
+      ? `
+        <img
+          src="${x.image}"
+          alt="${escapeHTML(x.name)}"
+          loading="lazy"
+        >
+      `
       : "";
 
     return `
-      <div class="item ${
-        unavailable.includes(x.id) ? "unavail" : ""
-      }" data-id="${x.id}">
+      <div
+        class="item ${
+          unavailable.includes(x.id)
+            ? "unavail"
+            : ""
+        }"
+        data-id="${escapeHTML(x.id)}"
+      >
+
         ${
           unavailable.includes(x.id)
             ? '<span class="badge">Unavailable</span>'
             : ""
         }
+
         ${image}
+
         <div class="meta">
-          <b>${x.name}</b>
-          <small>${x.note}</small>
+          <b>${escapeHTML(x.name)}</b>
+          <small>${escapeHTML(x.note || "")}</small>
         </div>
+
       </div>
     `;
   }
 
+  /* -----------------------------------------------------
+     CLOSET
+  ----------------------------------------------------- */
+
   function renderCloset() {
-    $("#closet").innerHTML = W.map(card).join("");
+    const closet = $("#closet");
+
+    if (!closet) return;
+
+    updateCount();
+
+    if (W.length === 0) {
+      closet.innerHTML = `
+        <div
+          style="
+            grid-column:1/-1;
+            padding:22px 8px;
+            text-align:center;
+            color:#777;
+          "
+        >
+          <div style="font-size:34px;margin-bottom:8px">
+            👗
+          </div>
+
+          <b>Your closet is empty</b>
+
+          <div style="margin-top:5px">
+            Add your first clothing photo below.
+          </div>
+        </div>
+      `;
+
+      return;
+    }
+
+    closet.innerHTML = W.map(card).join("");
 
     document
       .querySelectorAll("#closet .item")
@@ -170,10 +264,16 @@ function init() {
             x => x.id === el.dataset.id
           );
 
-          showChoice(chosen);
+          if (chosen) {
+            showChoice(chosen);
+          }
         };
       });
   }
+
+  /* -----------------------------------------------------
+     COMPATIBILITY
+  ----------------------------------------------------- */
 
   function compatible(a, b) {
     if (
@@ -197,14 +297,14 @@ function init() {
       return false;
     }
 
+    /*
+      A camisole should not normally be paired with
+      another top.
+    */
     if (
       (
-        a.id === "camisole" &&
-        ["vneck", "stripe", "pinstripe"].includes(b.id)
-      ) ||
-      (
-        b.id === "camisole" &&
-        ["vneck", "stripe", "pinstripe"].includes(a.id)
+        a.type === "top" &&
+        b.type === "top"
       )
     ) {
       return false;
@@ -213,162 +313,279 @@ function init() {
     return true;
   }
 
+  /* -----------------------------------------------------
+     SCORING
+  ----------------------------------------------------- */
+
   function score(x) {
     let s = 2;
 
+    /*
+      We don't rely on the old item IDs anymore.
+
+      Instead, use the item's category and text to
+      provide some basic styling intelligence.
+    */
+
+    const text = (
+      x.name +
+      " " +
+      (x.note || "")
+    ).toLowerCase();
+
     if (mood === "comfy") {
-      s +=
-        x.id === "vneck"
-          ? 7
-          : x.id === "pinstripe"
-          ? 7
-          : x.id === "jeans"
-          ? 5
-          : x.id === "sneakers"
-          ? 5
-          : 0;
+      if (
+        text.includes("comfy") ||
+        text.includes("comfortable") ||
+        text.includes("soft")
+      ) {
+        s += 7;
+      }
     }
 
     if (mood === "good") {
-      s +=
-        x.id === "necklace"
-          ? 8
-          : x.id === "vneck"
-          ? 5
-          : x.id === "trousers"
-          ? 4
-          : 0;
+      if (
+        text.includes("favorite") ||
+        text.includes("love") ||
+        text.includes("like")
+      ) {
+        s += 5;
+      }
     }
 
     if (style === "casual") {
-      s +=
-        x.id === "jeans"
-          ? 6
-          : x.id === "sneakers"
-          ? 5
-          : x.id === "stripe"
-          ? 4
-          : 0;
+      if (
+        text.includes("casual") ||
+        text.includes("jean") ||
+        text.includes("sneaker")
+      ) {
+        s += 6;
+      }
     }
 
     if (style === "semi") {
-      s +=
-        x.id === "pinstripe"
-          ? 6
-          : x.id === "blazer"
-          ? 6
-          : x.id === "trousers"
-          ? 5
-          : x.id === "loafers"
-          ? 5
-          : 0;
+      if (
+        text.includes("blazer") ||
+        text.includes("shirt") ||
+        text.includes("trouser") ||
+        text.includes("loafer")
+      ) {
+        s += 6;
+      }
     }
 
     if (style === "interesting") {
-      s +=
-        x.id === "loafers"
-          ? 9
-          : x.id === "trousers"
-          ? 7
-          : x.id === "blazer"
-          ? 6
-          : x.id === "necklace"
-          ? 5
-          : 0;
+      if (
+        text.includes("statement") ||
+        text.includes("interesting") ||
+        text.includes("bold") ||
+        text.includes("pattern") ||
+        text.includes("stripe")
+      ) {
+        s += 7;
+      }
     }
 
     if (weather === "cold") {
-      s +=
-        x.id === "blazer"
-          ? 5
-          : x.id === "pinstripe"
-          ? 3
-          : 0;
+      if (
+        x.type === "layer" ||
+        text.includes("sweater") ||
+        text.includes("jacket") ||
+        text.includes("coat")
+      ) {
+        s += 6;
+      }
     }
 
     if (weather === "warm") {
-      s +=
-        x.id === "vneck"
-          ? 4
-          : x.id === "camisole"
-          ? 4
-          : x.id === "sneakers"
-          ? 2
-          : 0;
+      if (
+        text.includes("light") ||
+        text.includes("linen") ||
+        text.includes("camisole") ||
+        text.includes("short")
+      ) {
+        s += 5;
+      }
     }
 
-    return s + feedbackBias(x) + Math.random() * 2;
+    return (
+      s +
+      feedbackBias(x) +
+      Math.random() * 2
+    );
   }
 
-  function generate(seed) {
+  /* -----------------------------------------------------
+     PICK ONE ITEM OF A TYPE
+  ----------------------------------------------------- */
+
+  function pickType(type, currentOutfit) {
+    const pool = available().filter(
+      x =>
+        x.type === type &&
+        !currentOutfit.some(
+          y => y.id === x.id
+        ) &&
+        currentOutfit.every(
+          y => compatible(y, x)
+        )
+    );
+
+    if (!pool.length) {
+      return null;
+    }
+
+    return pool.sort(
+      (a, b) => score(b) - score(a)
+    )[0];
+  }
+
+  /* -----------------------------------------------------
+     GENERATE OUTFIT
+  ----------------------------------------------------- */
+
+  function generate(seed = null) {
     const pool = available();
+
+    if (!pool.length) {
+      return [];
+    }
+
     const r = seed ? [seed] : [];
 
-    const pick = type =>
-      pool
-        .filter(
-          x =>
-            x.type === type &&
-            !r.some(y => y.id === x.id) &&
-            r.every(y => compatible(y, x))
-        )
-        .sort((a, b) => score(b) - score(a))[0];
+    /*
+      If the user chose a starting item,
+      make sure we don't accidentally duplicate it.
+    */
 
-    if (!r.some(x => x.type === "bottom")) {
-      const x = pick("bottom");
-      if (x) r.push(x);
-    }
-
-    if (!r.some(x => x.type === "top")) {
-      const tops = pool.filter(
-        x =>
-          x.type === "top" &&
-          !r.some(y => y.id === x.id) &&
-          r.every(y => compatible(y, x))
+    /* Bottom */
+    if (
+      !r.some(x => x.type === "bottom")
+    ) {
+      const bottom = pickType(
+        "bottom",
+        r
       );
 
-      const x = tops.sort(
-        (a, b) => score(b) - score(a)
-      )[0];
-
-      if (x) r.push(x);
+      if (bottom) {
+        r.push(bottom);
+      }
     }
 
+    /* Top */
+    if (
+      !r.some(x => x.type === "top")
+    ) {
+      const topCandidates = pool
+        .filter(
+          x =>
+            x.type === "top" &&
+            !r.some(
+              y => y.id === x.id
+            ) &&
+            r.every(
+              y => compatible(y, x)
+            )
+        )
+        .sort(
+          (a, b) => score(b) - score(a)
+        );
+
+      if (topCandidates[0]) {
+        r.push(topCandidates[0]);
+      }
+    }
+
+    /* Layer for cold weather */
     if (weather === "cold") {
-      const x = pick("layer");
-      if (x) r.push(x);
+      const layer = pickType(
+        "layer",
+        r
+      );
+
+      if (layer) {
+        r.push(layer);
+      }
     }
 
-    const s = pick("shoes");
-    if (s) r.push(s);
+    /* Shoes */
+    const shoes = pickType(
+      "shoes",
+      r
+    );
 
+    if (shoes) {
+      r.push(shoes);
+    }
+
+    /* Accessory */
     if (
       mood === "good" ||
       style === "semi" ||
       style === "interesting"
     ) {
-      const a = pick("accessory");
-      if (a) r.push(a);
-    }
-
-    if (
-      style === "interesting" &&
-      !r.some(x => x.id === "loafers") &&
-      !unavailable.includes("loafers") &&
-      !r.some(x => x.type === "shoes")
-    ) {
-      const loafers = W.find(
-        x => x.id === "loafers"
+      const accessory = pickType(
+        "accessory",
+        r
       );
 
-      if (loafers) r.push(loafers);
+      if (accessory) {
+        r.push(accessory);
+      }
     }
 
     return r;
   }
 
+  /* -----------------------------------------------------
+     SHOW EMPTY-CLOSET MESSAGE
+  ----------------------------------------------------- */
+
+  function showEmptyCloset() {
+    $("#result").classList.add("show");
+
+    $("#result").innerHTML = `
+      <div class="section-title">
+        YOUR CLOSET IS EMPTY
+      </div>
+
+      <h2>
+        Let's add your first piece.
+      </h2>
+
+      <p>
+        Take a photo or choose an existing
+        photo from your phone.
+      </p>
+
+      <div class="tools">
+        <button id="addFirst">
+          📸 Add my first clothing photo
+        </button>
+      </div>
+    `;
+
+    $("#addFirst").onclick = () => {
+      $("#photoInput").click();
+    };
+
+    $("#result").scrollIntoView({
+      behavior: "smooth",
+      block: "nearest"
+    });
+  }
+
+  /* -----------------------------------------------------
+     SHOW OUTFIT
+  ----------------------------------------------------- */
+
   function show(title, outfit, note) {
     current = outfit;
+
+    if (!outfit.length) {
+      showEmptyCloset();
+      return;
+    }
 
     $("#result").classList.add("show");
 
@@ -377,13 +594,15 @@ function init() {
         STYLIST SUGGESTION
       </div>
 
-      <h2>${title}</h2>
+      <h2>
+        ${escapeHTML(title)}
+      </h2>
 
       <p>
         ${
           chosen
-            ? `🔒 ${chosen.name} stays — I’ll change the pieces around it.`
-            : note
+            ? `🔒 ${escapeHTML(chosen.name)} stays — I’ll change the pieces around it.`
+            : escapeHTML(note || "")
         }
       </p>
 
@@ -392,32 +611,58 @@ function init() {
       </div>
 
       <div class="tools">
-        <button id="like">❤️ Yes</button>
-        <button id="dislike">👎 No</button>
-        <button id="new">↻ Try another</button>
-        <button id="change">🔄 Change one thing</button>
-        <button id="alts">🎲 Alternatives</button>
+
+        <button id="like">
+          ❤️ Yes
+        </button>
+
+        <button id="dislike">
+          👎 No
+        </button>
+
+        <button id="new">
+          ↻ Try another
+        </button>
+
+        <button id="change">
+          🔄 Change one thing
+        </button>
+
+        <button id="alts">
+          🎲 Alternatives
+        </button>
+
       </div>
 
-      <div id="feedback-note" class="hint"></div>
+      <div
+        id="feedback-note"
+        class="hint"
+      ></div>
     `;
 
     $("#result")
       .querySelectorAll(".item")
       .forEach(el => {
-        el.onclick = () =>
+        el.onclick = () => {
           toggle(el.dataset.id);
+        };
       });
 
     $("#like").onclick = () => {
-      recordFeedback("yes", current);
+      recordFeedback(
+        "yes",
+        current
+      );
 
       $("#feedback-note").textContent =
         "Got it ❤️ I’ll use that signal for future suggestions.";
     };
 
     $("#dislike").onclick = () => {
-      recordFeedback("no", current);
+      recordFeedback(
+        "no",
+        current
+      );
 
       $("#feedback-note").textContent =
         "Got it 👌 I’ll use that signal for future suggestions.";
@@ -431,12 +676,15 @@ function init() {
         generate(anchor),
         anchor
           ? `Same ${anchor.name}, with a different combination around it.`
-          : "Another option based on your current mood."
+          : "Another option based on your current choices."
       );
     };
 
-    $("#change").onclick = changeOne;
-    $("#alts").onclick = alternatives;
+    $("#change").onclick =
+      changeOne;
+
+    $("#alts").onclick =
+      alternatives;
 
     $("#result").scrollIntoView({
       behavior: "smooth",
@@ -444,10 +692,20 @@ function init() {
     });
   }
 
+  /* -----------------------------------------------------
+     TOGGLE ITEM AVAILABILITY
+  ----------------------------------------------------- */
+
   function toggle(id) {
-    unavailable = unavailable.includes(id)
-      ? unavailable.filter(x => x !== id)
-      : [...unavailable, id];
+    unavailable =
+      unavailable.includes(id)
+        ? unavailable.filter(
+            x => x !== id
+          )
+        : [
+            ...unavailable,
+            id
+          ];
 
     localStorage.setItem(
       "unavailable",
@@ -457,40 +715,77 @@ function init() {
     renderCloset();
   }
 
+  /* -----------------------------------------------------
+     START WITH AN ITEM
+  ----------------------------------------------------- */
+
   function openPicker() {
-    $("#pickgrid").innerHTML = available()
-      .map(
-        x => `
-          <button
-            class="pick"
-            data-pick="${x.id}"
-          >
-            ${
-              x.image
-                ? `<img src="${x.image}">`
-                : ""
-            }
-            <b>${x.name}</b>
-          </button>
-        `
-      )
-      .join("");
+    const grid = $("#pickgrid");
+
+    if (!available().length) {
+      picker.close();
+      showEmptyCloset();
+      return;
+    }
+
+    grid.innerHTML =
+      available()
+        .map(
+          x => `
+            <button
+              class="pick"
+              data-pick="${escapeHTML(x.id)}"
+            >
+
+              ${
+                x.image
+                  ? `
+                    <img
+                      src="${x.image}"
+                      alt="${escapeHTML(x.name)}"
+                    >
+                  `
+                  : ""
+              }
+
+              <b>
+                ${escapeHTML(x.name)}
+              </b>
+
+            </button>
+          `
+        )
+        .join("");
 
     document
-      .querySelectorAll("[data-pick]")
+      .querySelectorAll(
+        "[data-pick]"
+      )
       .forEach(b => {
+
         b.onclick = () => {
+
           chosen = W.find(
-            x => x.id === b.dataset.pick
+            x =>
+              x.id ===
+              b.dataset.pick
           );
 
           picker.close();
-          showChoice(chosen);
+
+          if (chosen) {
+            showChoice(chosen);
+          }
         };
+
       });
 
     picker.showModal();
   }
+
+  /* -----------------------------------------------------
+     SHOW CHOSEN ITEM
+  ----------------------------------------------------- */
 
   function showChoice(item) {
     $("#result").classList.add("show");
@@ -500,15 +795,20 @@ function init() {
         YOUR STARTING POINT
       </div>
 
-      <h2>${item.name}</h2>
+      <h2>
+        ${escapeHTML(item.name)}
+      </h2>
 
       <div class="look">
         ${card(item)}
       </div>
 
-      <p>What should I do with it?</p>
+      <p>
+        What should I do with it?
+      </p>
 
       <div class="tools">
+
         <button id="build">
           ✨ Build me an outfit
         </button>
@@ -520,27 +820,35 @@ function init() {
         <button id="goes">
           👀 What goes with this?
         </button>
+
       </div>
     `;
 
-    $("#build").onclick = () =>
+    $("#build").onclick = () => {
       show(
         "Built around your choice",
         generate(item),
-        "A complete look built around your chosen piece, style direction and weather."
+        "A complete look built around your chosen piece."
       );
+    };
 
-    $("#ways").onclick = () =>
+    $("#ways").onclick = () => {
       showAlternatives(item);
+    };
 
-    $("#goes").onclick = () =>
+    $("#goes").onclick = () => {
       showCompatible(item);
+    };
 
     $("#result").scrollIntoView({
       behavior: "smooth",
       block: "nearest"
     });
   }
+
+  /* -----------------------------------------------------
+     WHAT GOES WITH THIS
+  ----------------------------------------------------- */
 
   function showCompatible(item) {
     const matches = available()
@@ -549,10 +857,32 @@ function init() {
           x.id !== item.id &&
           compatible(item, x)
       )
-      .sort((a, b) => score(b) - score(a))
+      .sort(
+        (a, b) =>
+          score(b) - score(a)
+      )
       .slice(0, 6);
 
     $("#result").classList.add("show");
+
+    if (!matches.length) {
+      $("#result").innerHTML = `
+        <div class="section-title">
+          WHAT GOES WITH IT
+        </div>
+
+        <h2>
+          ${escapeHTML(item.name)}
+        </h2>
+
+        <p>
+          Add a few more pieces to your closet
+          and I'll find combinations for this one.
+        </p>
+      `;
+
+      return;
+    }
 
     $("#result").innerHTML = `
       <div class="section-title">
@@ -560,7 +890,8 @@ function init() {
       </div>
 
       <h2>
-        Good matches for ${item.name}
+        Good matches for
+        ${escapeHTML(item.name)}
       </h2>
 
       <p>
@@ -578,18 +909,30 @@ function init() {
       </div>
     `;
 
-    $("#build2").onclick = () =>
+    $("#build2").onclick = () => {
       show(
         "Built around your choice",
         generate(item),
-        "A complete look built around your chosen piece, style direction and weather."
+        "A complete look built around your chosen piece."
       );
+    };
   }
 
+  /* -----------------------------------------------------
+     THREE ALTERNATIVES
+  ----------------------------------------------------- */
+
   function showAlternatives(item) {
-    const a = generate(item);
-    const b = generate(item);
-    const c = generate(item);
+    if (!item) {
+      showEmptyCloset();
+      return;
+    }
+
+    const alternatives = [
+      generate(item),
+      generate(item),
+      generate(item)
+    ];
 
     $("#result").classList.add("show");
 
@@ -607,135 +950,170 @@ function init() {
           Same starting piece, different directions.
         </p>
       ` +
-      [a, b, c]
+      alternatives
         .map(
-          (v, i) => `
+          (outfit, i) => `
             <div style="margin-top:18px">
-              <b>Option ${i + 1}</b>
+
+              <b>
+                Option ${i + 1}
+              </b>
 
               <div class="look">
-                ${v.map(card).join("")}
+                ${outfit
+                  .map(card)
+                  .join("")}
               </div>
+
             </div>
           `
         )
         .join("");
   }
 
+  /* -----------------------------------------------------
+     CHANGE ONE THING
+  ----------------------------------------------------- */
+
   function changeOne() {
+    if (!current.length) {
+      return;
+    }
+
     const choices = current
       .filter(
-        x => !chosen || x.id !== chosen.id
+        x =>
+          !chosen ||
+          x.id !== chosen.id
       )
       .map(
         x => `
           <button
             class="pick"
-            data-change="${x.id}"
+            data-change="${escapeHTML(x.id)}"
           >
+
             ${
               x.image
-                ? `<img src="${x.image}">`
+                ? `
+                  <img
+                    src="${x.image}"
+                    alt="${escapeHTML(x.name)}"
+                  >
+                `
                 : ""
             }
 
             <b>
-              Change ${x.name}
+              Change ${escapeHTML(x.name)}
             </b>
+
           </button>
         `
       )
       .join("");
 
-    $("#pickgrid").innerHTML = choices;
+    if (!choices) {
+      return;
+    }
+
+    $("#pickgrid").innerHTML =
+      choices;
 
     document
-      .querySelectorAll("[data-change]")
+      .querySelectorAll(
+        "[data-change]"
+      )
       .forEach(b => {
-        b.onclick = () => {
-          const old = W.find(
-            x => x.id === b.dataset.change
-          );
 
-          const replacement = available()
-            .filter(
+        b.onclick = () => {
+
+          const old =
+            W.find(
               x =>
-                x.type === old.type &&
-                x.id !== old.id &&
-                !current.some(
-                  y => y.id === x.id
-                )
-            )
-            .sort(
-              (a, b) => score(b) - score(a)
-            )[0];
+                x.id ===
+                b.dataset.change
+            );
+
+          if (!old) {
+            return;
+          }
+
+          const replacement =
+            available()
+              .filter(
+                x =>
+                  x.type === old.type &&
+                  x.id !== old.id &&
+                  !current.some(
+                    y =>
+                      y.id === x.id
+                  )
+              )
+              .sort(
+                (a, b) =>
+                  score(b) -
+                  score(a)
+              )[0];
 
           if (replacement) {
+
             show(
               "One thing changed",
+
               current.map(x =>
                 x.id === old.id
                   ? replacement
                   : x
               ),
+
               "Same outfit direction, one fresh piece."
             );
+
+          } else {
+
+            $("#result").innerHTML += `
+              <p class="hint">
+                You don't have another
+                ${escapeHTML(old.type)}
+                available yet.
+              </p>
+            `;
           }
 
           picker.close();
         };
+
       });
 
     picker.showModal();
   }
 
+  /* -----------------------------------------------------
+     ALTERNATIVES BUTTON
+  ----------------------------------------------------- */
+
   function alternatives() {
     const seed =
       chosen ||
       current.find(
-        x => x.type === "bottom"
+        x =>
+          x.type === "bottom"
       ) ||
       current[0];
 
-    const vs = [
+    if (!seed) {
+      showEmptyCloset();
+      return;
+    }
+
+    const variants = [
       generate(seed),
       generate(seed),
       generate(seed)
     ];
 
-    const loafer = W.find(
-      x => x.id === "loafers"
-    );
-
-    const blazer = W.find(
-      x => x.id === "blazer"
-    );
-
-    if (
-      loafer &&
-      !unavailable.includes("loafers") &&
-      vs[1].some(x => x.type === "shoes")
-    ) {
-      const shoeIndex = vs[1].findIndex(
-        x => x.type === "shoes"
-      );
-
-      vs[1].splice(
-        shoeIndex,
-        1,
-        loafer
-      );
-    }
-
-    if (
-      blazer &&
-      !unavailable.includes("blazer") &&
-      !vs[2].some(
-        x => x.id === "blazer"
-      )
-    ) {
-      vs[2].push(blazer);
-    }
+    $("#result").classList.add("show");
 
     $("#result").innerHTML =
       `
@@ -751,113 +1129,256 @@ function init() {
           Same starting point, different feel.
         </p>
       ` +
-      vs
+      variants
         .map(
-          (v, i) => `
-            <div style="margin-top:18px">
-              <b>Option ${i + 1}</b>
+          (outfit, i) => `
+            <div
+              style="
+                margin-top:18px
+              "
+            >
+
+              <b>
+                Option ${i + 1}
+              </b>
 
               <div class="look">
-                ${v.map(card).join("")}
+                ${outfit
+                  .map(card)
+                  .join("")}
               </div>
+
             </div>
           `
         )
         .join("");
-
-    $("#result").classList.add("show");
   }
 
-  document
-    .querySelectorAll("#styles .chip")
-    .forEach(b => {
-      b.onclick = () => {
-        document
-          .querySelectorAll("#styles .chip")
-          .forEach(x =>
-            x.classList.remove("active")
-          );
-
-        b.classList.add("active");
-        style = b.dataset.style;
-      };
-    });
+  /* -----------------------------------------------------
+     STYLE CHIPS
+  ----------------------------------------------------- */
 
   document
-    .querySelectorAll("#moods .chip")
+    .querySelectorAll(
+      "#styles .chip"
+    )
     .forEach(b => {
+
       b.onclick = () => {
+
         document
-          .querySelectorAll("#moods .chip")
+          .querySelectorAll(
+            "#styles .chip"
+          )
           .forEach(x =>
-            x.classList.remove("active")
+            x.classList.remove(
+              "active"
+            )
           );
 
-        b.classList.add("active");
-        mood = b.dataset.mood;
+        b.classList.add(
+          "active"
+        );
+
+        style =
+          b.dataset.style;
       };
+
     });
+
+  /* -----------------------------------------------------
+     MOOD CHIPS
+  ----------------------------------------------------- */
 
   document
-    .querySelectorAll("#weather .chip")
+    .querySelectorAll(
+      "#moods .chip"
+    )
     .forEach(b => {
+
       b.onclick = () => {
+
         document
-          .querySelectorAll("#weather .chip")
+          .querySelectorAll(
+            "#moods .chip"
+          )
           .forEach(x =>
-            x.classList.remove("active")
+            x.classList.remove(
+              "active"
+            )
           );
 
-        b.classList.add("active");
-        weather = b.dataset.weather;
+        b.classList.add(
+          "active"
+        );
+
+        mood =
+          b.dataset.mood;
       };
+
     });
 
-  $("#surprise").onclick = () =>
+  /* -----------------------------------------------------
+     WEATHER CHIPS
+  ----------------------------------------------------- */
+
+  document
+    .querySelectorAll(
+      "#weather .chip"
+    )
+    .forEach(b => {
+
+      b.onclick = () => {
+
+        document
+          .querySelectorAll(
+            "#weather .chip"
+          )
+          .forEach(x =>
+            x.classList.remove(
+              "active"
+            )
+          );
+
+        b.classList.add(
+          "active"
+        );
+
+        weather =
+          b.dataset.weather;
+      };
+
+    });
+
+  /* -----------------------------------------------------
+     SURPRISE ME
+  ----------------------------------------------------- */
+
+  $("#surprise").onclick = () => {
+
+    if (!W.length) {
+      showEmptyCloset();
+      return;
+    }
+
     show(
       "A surprise for today",
       generate(),
       "Based on your style direction, mood and weather."
     );
+  };
 
-  $("#start").onclick = openPicker;
+  /* -----------------------------------------------------
+     START WITH AN ITEM
+  ----------------------------------------------------- */
 
-  $("#addItem").onclick = () =>
-    $("#photoInput").click();
+  $("#start").onclick =
+    openPicker;
 
-  $("#photoInput").onchange = async e => {
-    const file = e.target.files[0];
+  /* -----------------------------------------------------
+     ADD CLOTHING PHOTO
+  ----------------------------------------------------- */
 
-    if (!file) return;
+  $("#addItem").onclick = () => {
 
-    const img = new Image();
+    /*
+      Make absolutely sure the input is NOT
+      camera-only.
+
+      This is also done above during initialization.
+    */
+    photoInput.removeAttribute(
+      "capture"
+    );
+
+    photoInput.click();
+  };
+
+  /* -----------------------------------------------------
+     PHOTO SELECTED
+  ----------------------------------------------------- */
+
+  photoInput.onchange = async e => {
+
+    const file =
+      e.target.files &&
+      e.target.files[0];
+
+    if (!file) {
+      return;
+    }
+
+    /*
+      Make sure it is actually an image.
+    */
+    if (
+      !file.type ||
+      !file.type.startsWith("image/")
+    ) {
+      alert(
+        "Please choose an image."
+      );
+
+      photoInput.value = "";
+      return;
+    }
+
+    const objectURL =
+      URL.createObjectURL(file);
+
+    const img =
+      new Image();
 
     img.onload = () => {
-      const max = 1000;
 
-      const scale = Math.min(
-        1,
-        max /
+      try {
+
+        /*
+          Compress the photo before storing it.
+
+          This keeps the local browser storage
+          from filling up too quickly.
+        */
+
+        const max = 1000;
+
+        const scale =
+          Math.min(
+            1,
+            max /
+              Math.max(
+                img.width,
+                img.height
+              )
+          );
+
+        const canvas =
+          document.createElement(
+            "canvas"
+          );
+
+        canvas.width =
           Math.max(
-            img.width,
-            img.height
-          )
-      );
+            1,
+            Math.round(
+              img.width * scale
+            )
+          );
 
-      const canvas =
-        document.createElement("canvas");
+        canvas.height =
+          Math.max(
+            1,
+            Math.round(
+              img.height * scale
+            )
+          );
 
-      canvas.width = Math.round(
-        img.width * scale
-      );
+        const ctx =
+          canvas.getContext(
+            "2d"
+          );
 
-      canvas.height = Math.round(
-        img.height * scale
-      );
-
-      canvas
-        .getContext("2d")
-        .drawImage(
+        ctx.drawImage(
           img,
           0,
           0,
@@ -865,27 +1386,57 @@ function init() {
           canvas.height
         );
 
-      const photo =
-        canvas.toDataURL(
-          "image/jpeg",
-          0.8
+        const photo =
+          canvas.toDataURL(
+            "image/jpeg",
+            0.76
+          );
+
+        $("#photoPreview").src =
+          photo;
+
+        $("#addForm").style.display =
+          "block";
+
+        $("#itemName").value = "";
+
+        $("#itemName").focus();
+
+      } finally {
+
+        URL.revokeObjectURL(
+          objectURL
         );
 
-      $("#photoPreview").src = photo;
+      }
 
-      $("#addForm").style.display =
-        "block";
-
-      $("#itemName").focus();
     };
 
-    img.src =
-      URL.createObjectURL(file);
+    img.onerror = () => {
+
+      URL.revokeObjectURL(
+        objectURL
+      );
+
+      alert(
+        "I couldn't read that photo. Please try another one."
+      );
+
+    };
+
+    img.src = objectURL;
   };
 
+  /* -----------------------------------------------------
+     SAVE NEW CLOTHING ITEM
+  ----------------------------------------------------- */
+
   $("#saveItem").onclick = () => {
+
     const name =
-      $("#itemName").value.trim();
+      $("#itemName")
+        .value
+        .trim();
 
     const type =
       $("#itemType").value;
@@ -894,44 +1445,171 @@ function init() {
       $("#photoPreview").src;
 
     if (!name) {
+
       alert(
         "Please give this item a name."
       );
+
+      $("#itemName").focus();
+
+      return;
+    }
+
+    if (
+      !image ||
+      image ===
+        window.location.href
+    ) {
+
+      alert(
+        "Please add a clothing photo first."
+      );
+
       return;
     }
 
     const item = {
-      id: "photo-" + Date.now(),
+
+      id:
+        "photo-" +
+        Date.now(),
+
       name,
+
       type,
+
       image,
-      note: "Added from phone"
+
+      note:
+        "Added from phone"
+
     };
 
-    const added = JSON.parse(
-      localStorage.getItem(
-        "addedWardrobe"
-      ) || "[]"
-    );
+    let added = [];
+
+    try {
+
+      added = JSON.parse(
+        localStorage.getItem(
+          "addedWardrobe"
+        ) || "[]"
+      );
+
+      if (!Array.isArray(added)) {
+        added = [];
+      }
+
+    } catch (e) {
+
+      added = [];
+
+    }
 
     added.push(item);
 
-    localStorage.setItem(
-      "addedWardrobe",
-      JSON.stringify(added)
-    );
+    try {
+
+      localStorage.setItem(
+        "addedWardrobe",
+        JSON.stringify(added)
+      );
+
+    } catch (e) {
+
+      /*
+        If the browser runs out of local storage,
+        don't silently lose the item.
+      */
+
+      alert(
+        "The photo is too large for the browser's local storage. Please try a smaller photo."
+      );
+
+      return;
+    }
 
     W.push(item);
 
     renderCloset();
 
+    /*
+      Clear the add form.
+    */
+
     $("#itemName").value = "";
-    $("#photoInput").value = "";
-    $("#addForm").style.display = "none";
-    $("#photoPreview").src = "";
+
+    photoInput.value = "";
+
+    $("#addForm").style.display =
+      "none";
+
+    $("#photoPreview").src =
+      "";
+
+    /*
+      Show a small confirmation.
+    */
+
+    $("#result").classList.add(
+      "show"
+    );
+
+    $("#result").innerHTML = `
+      <div class="section-title">
+        ADDED TO YOUR CLOSET
+      </div>
+
+      <h2>
+        ${escapeHTML(item.name)}
+      </h2>
+
+      <div class="look">
+        ${card(item)}
+      </div>
+
+      <p>
+        Your closet now has
+        <b>${W.length}</b>
+        ${W.length === 1 ? "piece" : "pieces"}.
+      </p>
+
+      <div class="tools">
+
+        <button id="addAnother">
+          📸 Add another
+        </button>
+
+        <button id="styleThis">
+          ✨ Style this
+        </button>
+
+      </div>
+    `;
+
+    $("#addAnother").onclick =
+      () => {
+        photoInput.click();
+      };
+
+    $("#styleThis").onclick =
+      () => {
+        chosen = item;
+
+        showChoice(item);
+      };
+
+    $("#result").scrollIntoView({
+      behavior: "smooth",
+      block: "nearest"
+    });
   };
 
+  /* -----------------------------------------------------
+     RESET
+  ----------------------------------------------------- */
+
   $("#reset").onclick = () => {
+
     unavailable = [];
 
     localStorage.removeItem(
@@ -939,9 +1617,37 @@ function init() {
     );
 
     renderCloset();
+
+    /*
+      If there are no clothing items,
+      show the empty state.
+    */
+
+    if (!W.length) {
+      showEmptyCloset();
+    }
   };
 
+  /* -----------------------------------------------------
+     FIRST RENDER
+  ----------------------------------------------------- */
+
   renderCloset();
+
+  /*
+    Make the current state obvious when starting
+    from scratch.
+  */
+
+  if (!W.length) {
+    console.log(
+      "INDEX wardrobe is ready for its first clothing photo."
+    );
+  }
 }
+
+/* -------------------------------------------------------
+   RUN
+------------------------------------------------------- */
 
 init();
