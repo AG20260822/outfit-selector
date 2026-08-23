@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
 
@@ -15,7 +14,6 @@
   <title>AI Test - Mobile Chrome</title>
 
   <style>
-
     * {
       box-sizing: border-box;
     }
@@ -129,19 +127,8 @@
       color: #735500;
     }
 
-    /*
-      IMPORTANT:
-      The results card starts hidden.
-      Once the AI returns predictions,
-      JavaScript changes this to display:block.
-    */
-
     #resultsCard {
       display: none;
-    }
-
-    #results {
-      display: block;
     }
 
     .result {
@@ -190,31 +177,31 @@
       border-top: 1px solid #e5e5e5;
     }
 
+    .debug {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f4f4f4;
+      border-radius: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
   </style>
-
 </head>
-
 
 <body>
 
-
 <div class="container">
-
 
   <h1>Small AI Test</h1>
 
-
   <div class="subtitle">
-
     A deliberately tiny browser AI test for mobile Chrome.
     Your photo stays on your phone.
-
   </div>
 
-
-  <!-- =====================================================
-       PHOTO CARD
-       ===================================================== -->
+  <!-- PHOTO -->
 
   <div class="card">
 
@@ -222,30 +209,16 @@
       1 · CHOOSE A PHOTO
     </span>
 
-
-    <!--
-      IMPORTANT FOR iPHONE / CHROME:
-
-      We deliberately do NOT use the "capture" attribute.
-
-      This allows the browser to offer:
-        • Photo Library
-        • Camera
-        • Files
-    -->
-
     <input
       id="photoInput"
       type="file"
       accept="image/*"
     >
 
-
     <img
       id="preview"
       alt="Selected photo"
     >
-
 
     <button
       id="runButton"
@@ -253,7 +226,6 @@
     >
       Run small AI
     </button>
-
 
     <div
       id="status"
@@ -265,9 +237,7 @@
   </div>
 
 
-  <!-- =====================================================
-       RESULTS
-       ===================================================== -->
+  <!-- RESULTS -->
 
   <div
     id="resultsCard"
@@ -278,25 +248,25 @@
       2 · AI RESULT
     </span>
 
-
     <div id="results"></div>
 
+    <div
+      id="debug"
+      class="debug"
+      style="display:none;"
+    ></div>
 
     <div class="note small">
-
-      These are generic ImageNet predictions.
-      This test is checking whether the phone can run
-      a small vision model locally — it is NOT yet
-      the final clothing-recognition AI.
-
+      This is a generic image-classification model.
+      It is NOT expected to identify clothing perfectly.
+      The purpose of this test is to prove that your
+      phone can run the AI and return usable predictions.
     </div>
 
   </div>
 
 
-  <!-- =====================================================
-       EXPLANATION
-       ===================================================== -->
+  <!-- EXPLANATION -->
 
   <div class="card">
 
@@ -304,51 +274,23 @@
       WHY ARE WE TESTING THIS?
     </span>
 
-
     <div class="small">
 
-      This is intentionally NOT the final wardrobe AI.
+      First we need to establish that Chrome on your
+      phone can reliably run a small computer-vision
+      model locally.
 
-      First we want to establish that your phone's
-      Chrome browser can reliably run a very small
-      computer-vision model locally.
-
-      If this works, we can then move to a
-      clothing-specific model or build a lightweight
-      clothing-recognition layer on top of this foundation.
+      Once that works, we can move on to a
+      clothing-specific model.
 
     </div>
 
   </div>
 
-
 </div>
 
 
 <script type="module">
-
-
-/*
-============================================================
- SMALL MOBILE AI TEST
-============================================================
-
-Goal:
-
-    Prove that a small local vision model can run
-    reliably in Chrome on your phone.
-
-This is NOT yet the wardrobe recogniser.
-
-============================================================
-*/
-
-
-/*
-============================================================
- IMPORT TRANSFORMERS.JS
-============================================================
-*/
 
 import {
   pipeline
@@ -357,23 +299,7 @@ import {
 
 /*
 ============================================================
- MODEL
-============================================================
-
-This is the small MobileNet model that successfully
-ran on your phone in the previous test.
-
-It is a generic ImageNet classifier.
-
-Therefore it may NOT say:
-
-    "blue jeans"
-
-That is expected.
-
-At this stage we care about getting actual predictions
-back and displaying them.
-
+MODEL
 ============================================================
 */
 
@@ -383,7 +309,7 @@ const MODEL =
 
 /*
 ============================================================
- ELEMENTS
+ELEMENTS
 ============================================================
 */
 
@@ -405,32 +331,29 @@ const resultsCard =
 const resultsBox =
   document.getElementById("results");
 
+const debugBox =
+  document.getElementById("debug");
+
 
 /*
 ============================================================
- STATE
+STATE
 ============================================================
 */
 
 let selectedFile = null;
-
 let previewURL = null;
-
 let classifier = null;
-
-let modelLoading = false;
+let loading = false;
 
 
 /*
 ============================================================
- STATUS MESSAGE
+STATUS
 ============================================================
 */
 
-function setStatus(
-  message,
-  type = ""
-) {
+function setStatus(message, type = "") {
 
   statusBox.className =
     "status " + type;
@@ -443,7 +366,7 @@ function setStatus(
 
 /*
 ============================================================
- HTML ESCAPING
+ESCAPE HTML
 ============================================================
 */
 
@@ -461,7 +384,7 @@ function escapeHTML(value) {
 
 /*
 ============================================================
- PHOTO SELECTION
+PHOTO SELECTION
 ============================================================
 */
 
@@ -472,15 +395,9 @@ photoInput.addEventListener(
     const file =
       photoInput.files?.[0];
 
-
     if (!file) {
       return;
     }
-
-
-    /*
-      Make sure it is actually an image.
-    */
 
     if (!file.type.startsWith("image/")) {
 
@@ -492,18 +409,8 @@ photoInput.addEventListener(
       return;
     }
 
-
-    /*
-      Store the selected photo.
-    */
-
     selectedFile =
       file;
-
-
-    /*
-      Remove the previous preview URL.
-    */
 
     if (previewURL) {
 
@@ -513,18 +420,10 @@ photoInput.addEventListener(
 
     }
 
-
-    /*
-      Create a local browser URL.
-
-      The image does NOT get uploaded to a server.
-    */
-
     previewURL =
       URL.createObjectURL(
         file
       );
-
 
     preview.src =
       previewURL;
@@ -532,18 +431,8 @@ photoInput.addEventListener(
     preview.style.display =
       "block";
 
-
-    /*
-      Enable the AI button.
-    */
-
     runButton.disabled =
       false;
-
-
-    /*
-      Clear previous results.
-    */
 
     resultsCard.style.display =
       "none";
@@ -551,6 +440,8 @@ photoInput.addEventListener(
     resultsBox.innerHTML =
       "";
 
+    debugBox.style.display =
+      "none";
 
     setStatus(
       "Photo selected. Tap <b>Run small AI</b>.",
@@ -563,38 +454,24 @@ photoInput.addEventListener(
 
 /*
 ============================================================
- RESIZE PHOTO
+MAKE SMALL IMAGE
 ============================================================
 
-We make a small temporary version of the photo before
-giving it to the AI.
+Reduce the photo before inference.
 
-Maximum dimension:
-
-    384 pixels
-
-This reduces memory pressure on the phone.
-
+This helps prevent memory problems on mobile Chrome.
 ============================================================
 */
 
-async function makeSmallImage(
-  file
-) {
+async function makeSmallImage(file) {
 
-  const url =
+  const sourceURL =
     URL.createObjectURL(file);
-
 
   try {
 
     const image =
       new Image();
-
-
-    /*
-      Wait until Chrome has decoded the image.
-    */
 
     await new Promise(
       (resolve, reject) => {
@@ -603,30 +480,20 @@ async function makeSmallImage(
           resolve;
 
         image.onerror =
-          () => {
-
-            reject(
-              new Error(
-                "Chrome could not read the photo."
-              )
-            );
-
-          };
+          () => reject(
+            new Error(
+              "Chrome could not decode the photo."
+            )
+          );
 
         image.src =
-          url;
+          sourceURL;
 
       }
     );
 
-
-    /*
-      Maximum image dimension.
-    */
-
     const MAX =
       384;
-
 
     let width =
       image.naturalWidth;
@@ -634,17 +501,11 @@ async function makeSmallImage(
     let height =
       image.naturalHeight;
 
-
     const largest =
       Math.max(
         width,
         height
       );
-
-
-    /*
-      Scale the image down if necessary.
-    */
 
     if (largest > MAX) {
 
@@ -663,23 +524,16 @@ async function makeSmallImage(
 
     }
 
-
-    /*
-      Create a canvas.
-    */
-
     const canvas =
       document.createElement(
         "canvas"
       );
-
 
     canvas.width =
       width;
 
     canvas.height =
       height;
-
 
     const context =
       canvas.getContext(
@@ -689,7 +543,6 @@ async function makeSmallImage(
         }
       );
 
-
     if (!context) {
 
       throw new Error(
@@ -697,11 +550,6 @@ async function makeSmallImage(
       );
 
     }
-
-
-    /*
-      Draw the resized image.
-    */
 
     context.drawImage(
       image,
@@ -711,11 +559,6 @@ async function makeSmallImage(
       height
     );
 
-
-    /*
-      Convert to a small JPEG.
-    */
-
     const blob =
       await new Promise(
         (resolve, reject) => {
@@ -724,19 +567,13 @@ async function makeSmallImage(
             result => {
 
               if (result) {
-
-                resolve(
-                  result
-                );
-
+                resolve(result);
               } else {
-
                 reject(
                   new Error(
-                    "Could not resize the photo."
+                    "Could not create resized image."
                   )
                 );
-
               }
 
             },
@@ -747,25 +584,13 @@ async function makeSmallImage(
         }
       );
 
-
-    /*
-      Convert the resized image into a browser URL.
-
-      IMPORTANT:
-
-      We pass this STRING URL to the AI.
-
-      We do NOT pass the File object.
-    */
-
-    const smallURL =
+    const url =
       URL.createObjectURL(
         blob
       );
 
-
     return {
-      url: smallURL,
+      url,
       width,
       height
     };
@@ -774,12 +599,8 @@ async function makeSmallImage(
 
   finally {
 
-    /*
-      Release the original temporary URL.
-    */
-
     URL.revokeObjectURL(
-      url
+      sourceURL
     );
 
   }
@@ -789,31 +610,19 @@ async function makeSmallImage(
 
 /*
 ============================================================
- LOAD MODEL
+LOAD MODEL
 ============================================================
 */
 
 async function loadModel() {
 
-  /*
-    If the model has already loaded,
-    reuse it.
-  */
-
   if (classifier) {
-
     return classifier;
-
   }
 
+  if (loading) {
 
-  /*
-    Prevent two simultaneous model loads.
-  */
-
-  if (modelLoading) {
-
-    while (modelLoading) {
+    while (loading) {
 
       await new Promise(
         resolve =>
@@ -826,13 +635,10 @@ async function loadModel() {
     }
 
     return classifier;
-
   }
 
-
-  modelLoading =
+  loading =
     true;
-
 
   try {
 
@@ -840,20 +646,11 @@ async function loadModel() {
       `
         <b>Loading small AI…</b><br>
         <span class="small">
-          Chrome is loading the local AI model.
-          Please give it a moment.
+          This may take a little while the first time.
         </span>
       `,
       "warning"
     );
-
-
-    /*
-      Quantized model.
-
-      WASM is deliberately used because it is a
-      conservative choice for mobile Chrome.
-    */
 
     classifier =
       await pipeline(
@@ -865,14 +662,13 @@ async function loadModel() {
         }
       );
 
-
     return classifier;
 
   }
 
   finally {
 
-    modelLoading =
+    loading =
       false;
 
   }
@@ -882,67 +678,104 @@ async function loadModel() {
 
 /*
 ============================================================
- DISPLAY RESULTS
-============================================================
-
-THIS is the important fix.
-
-The previous test successfully ran the AI but the
-results section remained empty.
-
-This function:
-
-    1. Clears old results.
-    2. Checks that predictions exist.
-    3. Creates a row for every prediction.
-    4. Displays the confidence percentage.
-    5. Displays a confidence bar.
-    6. Makes the results card visible.
-
+SHOW RESULTS
 ============================================================
 */
 
 function showResults(output) {
 
-  /*
-    Clear anything currently in the results area.
-  */
-
   resultsBox.innerHTML =
     "";
 
+  debugBox.style.display =
+    "none";
 
   /*
-    Make sure we actually received an array.
+    Transformers.js image classification normally
+    returns:
+
+      [
+        {
+          label: "...",
+          score: 0.123
+        }
+      ]
+  */
+
+  let predictions =
+    output;
+
+
+  /*
+    Make the function tolerant of different
+    output shapes.
   */
 
   if (
-    !Array.isArray(output) ||
-    output.length === 0
+    !Array.isArray(predictions) &&
+    predictions?.data
+  ) {
+
+    predictions =
+      predictions.data;
+
+  }
+
+
+  /*
+    Always show the results card once the AI
+    has completed.
+  */
+
+  resultsCard.style.display =
+    "block";
+
+
+  /*
+    If nothing came back, show diagnostic
+    information instead of leaving a blank card.
+  */
+
+  if (
+    !Array.isArray(predictions) ||
+    predictions.length === 0
   ) {
 
     resultsBox.innerHTML = `
       <div class="result">
 
         <div class="result-name">
-          No results returned
+          AI ran, but returned no predictions
         </div>
 
         <div class="result-score">
-          The AI completed, but returned no predictions.
+          The model executed successfully,
+          but its output was empty.
         </div>
 
       </div>
     `;
 
-
-    /*
-      IMPORTANT:
-      Show the results card even in this case.
-    */
-
-    resultsCard.style.display =
+    debugBox.style.display =
       "block";
+
+    try {
+
+      debugBox.textContent =
+        JSON.stringify(
+          output,
+          null,
+          2
+        );
+
+    }
+
+    catch {
+
+      debugBox.textContent =
+        String(output);
+
+    }
 
     return;
 
@@ -950,120 +783,75 @@ function showResults(output) {
 
 
   /*
-    Create one result row for each prediction.
+    Display top predictions.
   */
 
-  output.forEach(
-    item => {
+  predictions
+    .slice(0, 5)
+    .forEach(
+      item => {
 
-      /*
-        Convert score to a safe number.
-      */
+        const label =
+          item?.label ??
+          "Unknown";
 
-      const score =
-        Number(
-          item?.score || 0
+        const score =
+          Number(
+            item?.score ?? 0
+          );
+
+        const percentage =
+          Math.round(
+            score * 100
+          );
+
+        const safePercentage =
+          Math.max(
+            0,
+            Math.min(
+              100,
+              percentage
+            )
+          );
+
+        const row =
+          document.createElement(
+            "div"
+          );
+
+        row.className =
+          "result";
+
+        row.innerHTML = `
+          <div class="result-name">
+            ${escapeHTML(label)}
+          </div>
+
+          <div class="result-score">
+            ${safePercentage}% confidence
+          </div>
+
+          <div class="bar">
+            <div
+              class="fill"
+              style="width:${safePercentage}%"
+            ></div>
+          </div>
+        `;
+
+        resultsBox.appendChild(
+          row
         );
 
-
-      /*
-        Convert 0–1 confidence into percentage.
-      */
-
-      const percentage =
-        Math.round(
-          score * 100
-        );
-
-
-      /*
-        Keep the bar between 0 and 100.
-      */
-
-      const safePercentage =
-        Math.max(
-          0,
-          Math.min(
-            100,
-            percentage
-          )
-        );
-
-
-      /*
-        Get the label.
-      */
-
-      const label =
-        item?.label ||
-        "Unknown";
-
-
-      /*
-        Create the result element.
-      */
-
-      const row =
-        document.createElement(
-          "div"
-        );
-
-
-      row.className =
-        "result";
-
-
-      /*
-        IMPORTANT:
-
-        We escape the model's label before displaying it.
-      */
-
-      row.innerHTML = `
-        <div class="result-name">
-          ${escapeHTML(label)}
-        </div>
-
-        <div class="result-score">
-          ${safePercentage}% confidence
-        </div>
-
-        <div class="bar">
-          <div
-            class="fill"
-            style="width:${safePercentage}%"
-          ></div>
-        </div>
-      `;
-
-
-      /*
-        Add the result to the results area.
-      */
-
-      resultsBox.appendChild(
-        row
-      );
-
-    }
-  );
-
-
-  /*
-    THIS is the key line.
-
-    The results card is no longer hidden.
-  */
-
-  resultsCard.style.display =
-    "block";
+      }
+    );
 
 }
 
 
 /*
 ============================================================
- RUN AI
+RUN AI
 ============================================================
 */
 
@@ -1071,60 +859,41 @@ runButton.addEventListener(
   "click",
   async () => {
 
-    /*
-      Safety check.
-    */
-
     if (
       !selectedFile ||
-      modelLoading
+      loading
     ) {
 
       return;
 
     }
 
-
-    /*
-      Disable the button while processing.
-
-      This prevents accidentally starting multiple
-      AI jobs at the same time.
-    */
-
     runButton.disabled =
       true;
-
-
-    /*
-      Hide any previous result.
-    */
 
     resultsCard.style.display =
       "none";
 
-
     resultsBox.innerHTML =
       "";
 
+    debugBox.style.display =
+      "none";
 
     let smallImage =
       null;
-
 
     try {
 
       /*
       ------------------------------------------------------
       STEP 1
-      Prepare the photo.
       ------------------------------------------------------
       */
 
       setStatus(
-        "Preparing the photo…"
+        "Preparing photo…"
       );
-
 
       smallImage =
         await makeSmallImage(
@@ -1135,7 +904,6 @@ runButton.addEventListener(
       /*
       ------------------------------------------------------
       STEP 2
-      Load the AI model.
       ------------------------------------------------------
       */
 
@@ -1146,17 +914,14 @@ runButton.addEventListener(
       /*
       ------------------------------------------------------
       STEP 3
-      Run the AI.
       ------------------------------------------------------
       */
 
       setStatus(
         `
           <b>AI is running locally…</b><br>
-
           <span class="small">
-            Your photo is being processed by Chrome.
-            Nothing is being uploaded to a server.
+            Your photo is being processed on the phone.
           </span>
         `,
         "warning"
@@ -1164,19 +929,22 @@ runButton.addEventListener(
 
 
       /*
-        IMPORTANT:
+      IMPORTANT:
 
-        Pass the STRING URL.
+      The correct Transformers.js option is:
 
-        Do NOT pass selectedFile.
-        Do NOT pass the File object.
+          top_k
+
+      NOT:
+
+          topk
       */
 
       const output =
         await ai(
           smallImage.url,
           {
-            topk: 5
+            top_k: 5
           }
         );
 
@@ -1184,7 +952,6 @@ runButton.addEventListener(
       /*
       ------------------------------------------------------
       STEP 4
-      Display the predictions.
       ------------------------------------------------------
       */
 
@@ -1202,10 +969,9 @@ runButton.addEventListener(
       setStatus(
         `
           <b>✓ It worked!</b><br>
-
           <span class="small">
-            Chrome successfully ran a local AI model
-            on your phone and returned predictions.
+            Chrome successfully ran the local AI model
+            and returned its output.
           </span>
         `,
         "success"
@@ -1213,44 +979,40 @@ runButton.addEventListener(
 
     }
 
-
     catch (error) {
-
-      /*
-        Log the complete error for debugging.
-      */
 
       console.error(
         "AI TEST ERROR:",
         error
       );
 
-
       const message =
         error?.message ||
         String(error);
 
+      resultsCard.style.display =
+        "block";
 
-      /*
-        Show the error on the page instead of letting
-        Chrome crash or leave the user wondering.
-      */
+      resultsBox.innerHTML = `
+        <div class="result">
+
+          <div class="result-name">
+            AI error
+          </div>
+
+          <div class="result-score">
+            ${escapeHTML(message)}
+          </div>
+
+        </div>
+      `;
 
       setStatus(
         `
           <b>The AI test failed.</b>
-
           <br><br>
-
           <span class="small">
             ${escapeHTML(message)}
-          </span>
-
-          <br><br>
-
-          <span class="small">
-            If Chrome itself disappears instead of showing
-            this message, tell me exactly that.
           </span>
         `,
         "error"
@@ -1258,12 +1020,7 @@ runButton.addEventListener(
 
     }
 
-
     finally {
-
-      /*
-        Release the temporary resized image.
-      */
 
       if (
         smallImage?.url
@@ -1275,11 +1032,6 @@ runButton.addEventListener(
 
       }
 
-
-      /*
-        Allow another test.
-      */
-
       runButton.disabled =
         false;
 
@@ -1288,32 +1040,7 @@ runButton.addEventListener(
   }
 );
 
-
-/*
-============================================================
- CLEAN UP PREVIEW WHEN PAGE IS CLOSED
-============================================================
-*/
-
-window.addEventListener(
-  "pagehide",
-  () => {
-
-    if (previewURL) {
-
-      URL.revokeObjectURL(
-        previewURL
-      );
-
-    }
-
-  }
-);
-
-
 </script>
 
-
 </body>
-
 </html>
